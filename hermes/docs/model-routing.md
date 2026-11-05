@@ -146,6 +146,6 @@ Agent-setup 루트에서는 `bash hermes/scripts/update.sh`로 실행한다. `--
 - stash: 이전 업데이트가 남긴 `hermes-update-autostash` stash는 목록만 보여주고 그대로 둔다. Hermes Desktop의 업데이트 버튼은 `--keep-stash`로 로컬 수정을 stash에 남기고 다시 적용하지 않으므로, 업데이트는 이 명령으로 한다.
 - 이전 OMH venv(`~/.local/share/omh/venv`): 업데이트와 점검이 성공하고, PATH의 `omh`가 generation 설치본을 실행하며, 이 venv를 가리키는 명령·프로세스가 없을 때 휴지통으로 옮긴다. 조건이 남아 있으면 이유를 출력하고 그대로 둔다. curl 설치기로 업데이트하면 이 venv가 다시 생긴다.
 - 갱신 뒤 Agent-setup 루트에서 `python3 scripts/check_releases.py`로 저장소 고정값이 최신 정식 릴리스와 같은지 확인한다. `behind`가 나온 항목은 고정값·사본·문서를 함께 올린다.
-- 점검 경고 중 선택 기능(Docker, OpenRouter, image_gen 등)의 `⚠`와 OMH doctor의 `plugin_loader_observed`·`plugin_runtime_observed`는 터미널 점검에서 Hermes 실행을 관측하지 못했다는 표시다. 재시작 뒤 Desktop 새 세션에서 OMH 도구 호출이 되면 정상이다. 점검이 실패하면 명령은 종료 코드 2로 끝나고 이전 OMH venv를 옮기지 않는다.
+- 점검 경고 중 선택 기능(Docker, OpenRouter, image_gen 등)의 `⚠`와 OMH doctor의 `plugin_loader_observed`·`plugin_runtime_observed`는 터미널 점검에서 Hermes 실행을 관측하지 못했다는 표시다. 재시작 뒤 Desktop 새 세션에서 OMH 도구 호출이 되면 정상이다. 점검이 실패하면 명령은 종료 코드 2로 끝나고 이전 OMH venv를 옮기지 않는다. `hermes doctor`가 보고한 항목이 모두 npm 의존성 경고("wait for an upstream lockfile fix")이면 Hermes 원본이 다음 릴리스에서 고칠 항목으로 안내만 하고 실패로 세지 않는다.
 
 갱신 뒤 Hermes Desktop 새 세션에서 플러그인 로딩, 실제 위임 모델, 계정 선택·사용량 표시를 확인한다.
