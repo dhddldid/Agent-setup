@@ -356,6 +356,21 @@ def assignments(values: dict) -> str:
     return '\n'.join(f'{name}={shlex.quote(str(value))}' for name, value in values.items())
 
 
+UPSTREAM_ONLY_MARKER = 'wait for an upstream lockfile fix'
+
+
+def doctor_issues(text: str) -> list[str]:
+    """Numbered issues from the summary at the end of `hermes doctor`."""
+    return re.findall(r'(?m)^\s+\d+\.\s+(.+)$', text.split('issue(s) to address', 1)[-1]) \
+        if 'issue(s) to address' in text else []
+
+
+def doctor_upstream_only(text: str) -> bool:
+    """True when every reported issue is an npm advisory only an upstream lockfile bump can fix."""
+    issues = doctor_issues(text)
+    return bool(issues) and all(UPSTREAM_ONLY_MARKER in issue for issue in issues)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or '').splitlines()[0])
     sub = parser.add_subparsers(dest='command', required=True)
@@ -375,6 +390,8 @@ def main(argv=None) -> int:
     p = sub.add_parser('diff')
     p.add_argument('before')
     p.add_argument('after')
+    p = sub.add_parser('doctor-upstream-only')
+    p.add_argument('file')
     p = sub.add_parser('legacy-check')
     p.add_argument('--omh-bin', required=True)
     p.add_argument('--expected-version', default='')
@@ -421,6 +438,8 @@ def main(argv=None) -> int:
         after = json.loads(Path(args.after).read_text(encoding='utf-8'))
         rows = diff_snapshots(before, after)
         print(render_table(rows))
+    elif args.command == 'doctor-upstream-only':
+        return 0 if doctor_upstream_only(Path(args.file).read_text(encoding='utf-8', errors='replace')) else 1
     elif args.command == 'legacy-check':
         facts = legacy_facts(args)
         safe, reasons = legacy_verdict(facts)

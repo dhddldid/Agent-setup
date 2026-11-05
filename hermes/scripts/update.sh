@@ -229,7 +229,15 @@ for doctor in "omh doctor --language ko" "hermes doctor"; do
   # shellcheck disable=SC2086
   if [[ $MODE == run ]]; then
     show_cmd $doctor
-    $doctor || { DOCTOR_FAILED="$DOCTOR_FAILED ${doctor%% *}"; warn "${doctor}가 실패를 보고했습니다."; }
+    DOCTOR_LOG="$WORK/${doctor%% *}-doctor.txt"
+    if ! $doctor 2>&1 | tee "$DOCTOR_LOG"; then
+      if "$PY" "$HELPERS" doctor-upstream-only "$DOCTOR_LOG"; then
+        warn "${doctor}가 보고한 항목은 Hermes 원본의 npm 의존성 경고뿐입니다. 다음 Hermes 릴리스에서 고쳐지며 이 컴퓨터에서 할 일은 없습니다."
+      else
+        DOCTOR_FAILED="$DOCTOR_FAILED ${doctor%% *}"
+        warn "${doctor}가 실패를 보고했습니다."
+      fi
+    fi
   else
     show_cmd $doctor
   fi

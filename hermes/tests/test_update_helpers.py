@@ -146,6 +146,15 @@ class SnapshotTests(unittest.TestCase):
 
 
 class UpdateScriptTextTests(unittest.TestCase):
+    def test_doctor_npm_advisories_only_are_upstream(self):
+        npm = ('  Found 2 issue(s) to address:\n\n'
+               '  1. Root npm package has 11 npm vulnerabilities; wait for an upstream lockfile fix, then update\n'
+               '  2. web workspace has 5 npm vulnerabilities; wait for an upstream lockfile fix, then update\n')
+        self.assertTrue(h.doctor_upstream_only(npm))
+        mixed = npm + '  3. Gateway service definition is out of date; run hermes gateway install\n'
+        self.assertFalse(h.doctor_upstream_only(mixed))
+        self.assertFalse(h.doctor_upstream_only('All checks passed\n'))
+
     def test_variables_before_non_ascii_text_use_braces(self):
         # Under `set -u`, bash reads a multibyte letter right after `$NAME` as part of the name.
         import re
