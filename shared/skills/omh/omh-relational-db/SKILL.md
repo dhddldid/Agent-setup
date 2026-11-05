@@ -75,6 +75,8 @@ Quality bar:
 - Load `references/engine-lock-tables.md` for the per-engine lock modes, the online DDL rules, and index-type selection instead of recalling them.
 - Size an index before proposing it: rows, key width, and the write amplification it adds.
 - Order an online migration as expand, backfill in batches, switch, contract, with the rollback for each step.
+- For a read-modify-write, an upsert, a queue table, or a deadlock, use the concurrency section of the lock tables: name the isolation level, the row lock and its order, and which error codes retry the whole transaction.
+- Give non-transactional DDL such as `CREATE INDEX CONCURRENTLY` its own migration marked non-transactional; never drop `CONCURRENTLY` to satisfy the migration tool.
 - Keep planned, observed, and applied as separate states for every statement.
 
 Handoff policy:
@@ -127,7 +129,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

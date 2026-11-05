@@ -56,8 +56,11 @@ class PortedRoutingTests(unittest.TestCase):
             if not shared.is_dir():
                 shared = ROOT / "shared/skills/packs/mac" / name
             hermes = ROOT / "hermes/skills" / name
-            files = sorted(p.relative_to(shared) for p in shared.rglob("*") if p.is_file())
-            self.assertEqual(files, sorted(p.relative_to(hermes) for p in hermes.rglob("*") if p.is_file()), name)
+            def tracked(root):
+                return sorted(p.relative_to(root) for p in root.rglob("*")
+                              if p.is_file() and "__pycache__" not in p.parts)
+            files = tracked(shared)
+            self.assertEqual(files, tracked(hermes), name)
             for rel in files:
                 self.assertEqual((hermes / rel).read_bytes(), (shared / rel).read_bytes(), f"{name}/{rel}")
 

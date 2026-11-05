@@ -137,6 +137,8 @@ def skill_inventory(skills_dir: Path) -> dict:
 def snapshot_rows(snap: dict) -> dict:
     """Flatten a snapshot into {label: (kind, value)}; kind is 'value' or 'state'."""
     rows = {}
+    if 'provider_usage_tag' in snap:
+        rows['provider-usage 버전'] = ('release', snap['provider_usage_tag'])
     chains = snap.get('model_chains') or {}
     for category, chain in sorted((chains.get('overrides') or {}).items()):
         rows[f'모델 체인 · {category}'] = ('value', chain)
@@ -167,6 +169,10 @@ def diff_snapshots(before: dict, after: dict) -> list[dict]:
     for label in list(old) + [label for label in new if label not in old]:
         kind, previous = old[label] if label in old else (new[label][0], None)
         current = new.get(label, (kind, None))[1]
+        if kind == 'release':
+            rows.append({'label': label, 'result': '유지' if previous == current else '업데이트',
+                         'detail': f'{short(previous)} → {short(current)}', 'attention': not bool(current)})
+            continue
         if kind == 'state':
             ok = current in OK_STATES
             result = '적용됨' if ok else '확인 필요'
@@ -249,6 +255,48 @@ def run(command, **kwargs):
         return subprocess.CompletedProcess(command, 127, '', str(error))
 
 
+def plugin_tag(checkout: Path) -> str:
+    """Read the installed release without fetching or changing the checkout."""
+    result = run(['git', '-C', str(checkout), 'describe', '--tags', '--exact-match', 'HEAD'])
+    return result.stdout.strip() if result.returncode == 0 else ''
+
+
+def upgrade_plugin(checkout: Path, tag: str) -> None:
+    """Park edits in a retained stash, then select the release for local patch reapplication."""
+    if not STABLE_VERSION.fullmatch(tag.removeprefix('v')):
+        raise ValueError(f'Invalid stable plugin tag: {tag}')
+    patch = ROOT / 'patches/provider-usage' / f'{tag}.patch'
+    if not patch.is_file():
+        raise ValueError(f'Missing plugin patch: {patch}')
+    if plugin_tag(checkout) == tag:
+        return
+    def git(*args):
+        result = run(['git', '-C', str(checkout), *args])
+        if result.returncode:
+            raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+        return result.stdout.strip()
+    git('fetch', 'origin', f'refs/tags/{tag}:refs/tags/{tag}')
+    dirty = git('status', '--porcelain')
+    if dirty:
+        git('stash', 'push', '--include-untracked', '-m', f'agent-setup-before-{tag}-upgrade')
+    try:
+        git('checkout', '--detach', tag)
+    except RuntimeError:
+        if dirty:
+            git('stash', 'apply', 'stash@{0}')
+        raise
+    if dirty:
+        print(f'Local edits retained: {checkout} stash agent-setup-before-{tag}-upgrade')
+
+
+def external_skill_commands(python: str, skills: Path) -> list[list[str]]:
+    """Build the explicitly approved refresh and description-restoration commands."""
+    scripts = ROOT.parent / 'codex/scripts'
+    return [[python, str(scripts / 'install_external_skills.py'), '--all', '--apply', '--refresh',
+             '--replace-existing', '--skills-dir', str(skills)],
+            [python, str(scripts / 'apply_skill_descriptions.py'), '--skill-root', str(skills), '--apply']]
+
+
 def omh_package(python: str) -> tuple[str, str]:
     if not python:
         return '', ''
@@ -292,6 +340,7 @@ def take_snapshot(args) -> dict:
     soul = hermes_home / 'SOUL.md'
     snap['soul_blocks'] = soul_blocks(soul.read_text(encoding='utf-8')) if soul.is_file() else {}
     snap['skills'] = skill_inventory(hermes_home / 'skills')
+    snap['provider_usage_tag'] = plugin_tag(hermes_home / 'plugins/provider-usage')
     pack = omh_home / 'routing/trigger-packs/ko.json'
     snap['trigger_pack'] = hashlib.sha256(pack.read_bytes()).hexdigest() if pack.is_file() else None
     states = snap['states']
@@ -382,6 +431,14 @@ def main(argv=None) -> int:
     p = sub.add_parser('patch-exists')
     p.add_argument('--target', required=True)
     p.add_argument('--tag', required=True)
+    p = sub.add_parser('plugin-tag')
+    p.add_argument('--checkout', type=Path, required=True)
+    p = sub.add_parser('upgrade-plugin')
+    p.add_argument('--checkout', type=Path, required=True)
+    p.add_argument('--tag', required=True)
+    p = sub.add_parser('refresh-external-skills')
+    p.add_argument('--skills-dir', type=Path, required=True)
+    p.add_argument('--apply', action='store_true')
     p = sub.add_parser('snapshot')
     for name in ('--out', '--hermes-home', '--omh-home', '--hermes-checkout', '--omh-bin'):
         p.add_argument(name, required=True)
@@ -421,6 +478,15 @@ def main(argv=None) -> int:
                            'OMH_INSTALLED': installed, 'OMH_CHANNEL': channel, 'OMH_SOURCE_URL': url}))
     elif args.command == 'patch-exists':
         return 0 if (ROOT / 'patches' / args.target / f'{args.tag}.patch').is_file() else 1
+    elif args.command == 'plugin-tag':
+        print(plugin_tag(args.checkout))
+    elif args.command == 'upgrade-plugin':
+        upgrade_plugin(args.checkout, args.tag)
+    elif args.command == 'refresh-external-skills':
+        for command in external_skill_commands(sys.executable, args.skills_dir):
+            print(shlex.join(command), flush=True)
+            if args.apply:
+                subprocess.run(command, check=True)
     elif args.command == 'snapshot':
         snap = take_snapshot(args)
         Path(args.out).write_text(json.dumps(snap, ensure_ascii=False, indent=2), encoding='utf-8')

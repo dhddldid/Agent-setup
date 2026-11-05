@@ -46,7 +46,7 @@ Bad example:
 
 ## Workflow Lane
 
-- Current lane: **Research and company ops** (`product-docs`, `source-finder`, `web-research`, `research`, `model-optimization`, `inference-serving`, `model-finetuning`, `research-brief`, `+21 more`) - research, signals, ops, and briefings.
+- Current lane: **Research and company ops** (`product-docs`, `source-finder`, `web-research`, `research`, `model-optimization`, `inference-serving`, `model-finetuning`, `research-brief`, `+27 more`) - research, signals, ops, and briefings.
 - If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
@@ -76,6 +76,10 @@ Quality bar:
 - Report coverage source by source on every run. A source the run could not read is unknown coverage for that period and is named as a gap; it is never reported as a quiet period or as nothing new.
 - Keep one cutoff per source and move it only for a source the run covered. A source that failed keeps its earlier cutoff, so the next run reads the missed window instead of skipping it.
 - Count by the underlying event, not by article or URL: reprints, rewrites, and link variants of one announcement are one finding, and an independent second source stays attached to it as corroboration.
+- For market watches, keep a dated competitor/pricing snapshot per covered entity with source IDs, observation/effective dates, original packaging and normalized comparison units. Reuse a stable period, currency, units, source cutoff, and materiality threshold; record scope changes and distinguish a real change from changed source coverage.
+- Classify market findings as observed, vendor-asserted, or inferred and preserve contrary evidence. When coverage fails, retain the failed source's previous cutoff and name the uncovered window; do not turn a failed read into unchanged pricing or no new activity.
+- When a material event needs sizing, customer/JTBD, or comparable pricing work, hand the bounded analysis to `market-research` with snapshot IDs, source dates, cutoff, gaps and budget; return findings to `research-brief` before Briefer delivery. A prepared handoff does not prove any analysis ran.
+- Outreach, paid sources, and schedule creation require separate explicit approval; research-operation setup is not permission to contact customers, buy data, schedule a watch, or approve a product investment.
 
 Handoff policy:
 
@@ -119,7 +123,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

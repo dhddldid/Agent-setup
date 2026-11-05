@@ -39,6 +39,7 @@ Bad example:
 - The debugger session plan names the DAP adapter, breakpoints, watchpoints, threads, frames, and values to read.
 - The handoff says the executor drives the debugger and OMH executes nothing.
 - Reproduction, debugger output, root cause, and fix are reported as separate observed or not_observed states.
+- Any print-and-rebuild probe carried the session's probe tag, and an observed search for that tag returns nothing.
 
 ## Recovery Notes
 
@@ -55,7 +56,7 @@ Bad example:
 
 Use when Hermes should prepare low-level debugging of a native binary, crash, or memory fault: competing hypotheses, the distinguishing observation for each, and a DAP-driven evidence plan for the executor.
 
-    Strong routing signals: `native-debugging`, `native debugging`, `native binary`, `segfault`, `segmentation fault`, `core dump`, `stack corruption`, `memory corruption`, `heap corruption`, `use after free`, `null pointer dereference`, `stripped binary`, `disassembly`, `lldb`, `gdb`, `dap debugger`, `breakpoint`, `watchpoint`, `backtrace`, `セグメンテーション違反`, `コアダンプ`, `メモリ破壊`, `ヒープ破壊`, `解放後使用`, `逆アセンブル`, `네이티브 디버깅`, `세그폴트`, `코어 덤프`, `메모리 손상`, `역어셈블`, `중단점`, `段错误`, `核心转储`, `内存破坏`, `释放后使用`, `反汇编`, `bantu debug segfault ini`, `analisis core dump`, `telusuri penyebab use after free`, `debug crash pada binary native`
+    Strong routing signals: `native-debugging`, `native debugging`, `native binary`, `segfault`, `segmentation fault`, `core dump`, `stack corruption`, `memory corruption`, `heap corruption`, `use after free`, `null pointer dereference`, `stripped binary`, `disassembly`, `lldb`, `gdb`, `dap debugger`, `breakpoint`, `watchpoint`, `backtrace`, `セグメンテーション違反`, `コアダンプ`, `メモリ破壊`, `ヒープ破壊`, `解放後使用`, `逆アセンブル`, `네이티브 디버깅`, `세그폴트`, `코어 덤프`, `메모리 손상`, `역어셈블`, `중단점`, `段错误`, `核心转储`, `内存破坏`, `释放后使用`, `反汇编`, `bantu debug segfault ini`, `analisis core dump`, `telusuri penyebab use after free`, `debug crash pada binary native`, `giúp debug lỗi segfault này`, `phân tích core dump`, `truy nguyên nhân use after free`, `debug crash trên binary native`
 
 ## Catalog Metadata
 
@@ -98,7 +99,7 @@ Expected outputs:
 
 Artifact expectations:
 
-- native_fault_statement/v1 separates the observed symptom from the assumed cause and names the reproduction command
+- native_fault_statement/v1 separates the observed symptom from the assumed cause, names the reproduction command, quotes the observed failure beside the reported one (`symptom_match`), and records the `minimised` reproduction
 - hypothesis_set/v1 spans distinct axes — caller-side misuse, callee invariant, memory lifetime, concurrency, build/runtime mismatch — not three phrasings of one guess
 - distinguishing_observation_plan/v1 pairs each hypothesis with the one observation that refutes it, and where to read it
 - debugger_session_plan/v1 names the adapter (lldb or gdb via DAP), the breakpoints and watchpoints, the frames and threads to inspect, and the values to read at each stop
@@ -126,7 +127,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

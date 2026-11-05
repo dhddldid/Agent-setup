@@ -6,8 +6,8 @@ Claude Code의 전역 지침·라우팅·스킬 설치 원본을 이 폴더에�
 |---|---|---|
 | 라우팅 에이전트 23개 | `~/.claude/agents/route-<분류>-<계열>.md` | [routes/claude-code.json](routes/claude-code.json) → `scripts/build_agents.py` |
 | 라우팅 표 | `~/.claude/agent-setup/routing.json` | 선택한 프리셋 |
-| 전역 규칙: 작업 원칙, 스킬 흐름, Aside, 모델 라우팅 | `~/.claude/AGENTS.md` 관리 구간 + `~/.claude/CLAUDE.md`의 `@AGENTS.md` 한 줄 | [templates/global-rules.md](templates/global-rules.md) (`../shared/rules/`에서 생성) |
-| 스킬 233개 | `~/.claude/skills/` | 공통 `../shared/skills/core/` 49개 + OMH 사본 `../shared/skills/omh/` 144개 + Claude 전용 `skills/codex` + Codex와 같은 외부 스킬 39개(`../codex/inventories/external-skills.json`) |
+| 전역 규칙: 작업 원칙, 스킬 흐름, 작업 형태별 OMH 흐름(`OMH workflow skills`), Aside, 모델 라우팅 | `~/.claude/AGENTS.md` 관리 구간 + `~/.claude/CLAUDE.md`의 `@AGENTS.md` 한 줄 | [templates/global-rules.md](templates/global-rules.md) (`../shared/rules/`에서 생성) |
+| 스킬 242개 | `~/.claude/skills/` | 공통 `../shared/skills/core/` 49개 + OMH 최신 정식판 사본 `../shared/skills/omh/` 153개(버전은 `SOURCE.json`) + Claude 전용 `skills/codex` + Codex와 같은 외부 스킬 39개(`../codex/inventories/external-skills.json`) |
 | Codex 플러그인 | Claude Code 플러그인 `codex@openai-codex` | [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) |
 
 ## 모델 라우팅
@@ -50,9 +50,21 @@ python3 scripts/install.py --verify-loading         # 터미널 Claude Code의 �
 
 전역 규칙은 `~/.claude/AGENTS.md`의 관리 구간에 들어간다. Claude Code가 이 파일을 읽도록 `~/.claude/CLAUDE.md`에 `@AGENTS.md` 한 줄짜리 관리 구간을 둔다. 사용 중인 Claude Code가 AGENTS.md를 직접 읽는다면 `--no-claude-md-pointer`로 그 줄을 빼거나 지운다. 예전 설치가 CLAUDE.md에 넣은 규칙 구간은 다음 적용 때 이 한 줄로 바뀐다. 규칙 원본은 `../shared/rules/`이고 `python3 ../scripts/build_rules.py`가 `templates/global-rules.md`를 만든다.
 
+외부 스킬은 설치할 때 원본별 최신 정식 릴리스 태그로 받는다.
+
 Claude Code에서 `/codex:setup`으로 Codex 설치·로그인을 확인한다. Aside 앱·CLI 설치는 [Hermes 브라우저 안내](../hermes/docs/browsers.md)의 Aside 절을 따른다.
 
 설치기는 처음 쓰는 파일을 추가하고, 자신이 설치한 그대로인 파일만 갱신한다. 사용자가 수정했거나 다른 출처의 같은 경로 파일이 있으면 아무것도 쓰지 않고 충돌 목록을 출력한다. 갱신·삭제 전 파일은 `~/.claude/agent-setup/backups/`에 남는다. 미리보기 결과에 Codex 플러그인과 Aside CLI 설치 여부도 표시한다.
+
+## 업데이트
+
+Agent-setup 루트에서 한 줄로 실행한다. OMH 최신 정식 태그를 조회해 OMH 스킬 사본이 다르면 공식 태그 원본에서 다시 가져오고, 기록된 프리셋으로 이 설치기를 다시 실행한 뒤 외부 스킬을 최신 정식판으로 갱신하고 설명 조정을 다시 적용한다. Codex가 설치된 컴퓨터에서는 Codex 쪽도 함께 갱신한다.
+
+```sh
+bash scripts/update_claude_codex.sh            # 적용
+bash scripts/update_claude_codex.sh --dry-run  # 실행할 명령과 현재 값
+bash scripts/update_claude_codex.sh --check    # 현재 상태만
+```
 
 ## 완료 확인
 

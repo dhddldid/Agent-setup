@@ -1,0 +1,343 @@
+diff --git a/dashboard/plugin_api.py b/dashboard/plugin_api.py
+index 0dca019..08fc555 100644
+--- a/dashboard/plugin_api.py
++++ b/dashboard/plugin_api.py
+@@ -390,6 +390,36 @@ def _claude_code_oauth_token():
+     return token
+ 
+ 
++def _selected_anthropic_usage():
++    try:
++        from hermes_cli.auth_usage_selection import (
++            get_usage_login_selection, resolve_usage_login_entry, usage_login_selection_was_recorded)
++    except ImportError:
++        return None
++    if not usage_login_selection_was_recorded("anthropic"):
++        return None
++    choice = get_usage_login_selection("anthropic") or {}
++    metadata = {key: choice.get(key) for key in ("credential_id", "account_email", "selected_at", "login_at")}
++    unavailable = {"id": "anthropic", **metadata, "status": "unavailable", "windows": []}
++    selected = resolve_usage_login_entry("anthropic")
++    if selected is None:
++        return unavailable
++    from hermes_cli.auth import read_credential_pool
++    rows = read_credential_pool("anthropic")
++    row = next((r for r in rows if r.get("id") == selected["id"]), None)
++    if row is None:
++        from agent.credential_pool import load_pool
++        entry = next((e for e in load_pool("anthropic").entries() if e.id == selected["id"]), None)
++        row = entry.to_dict() if entry is not None else None
++    if not row or not row.get("access_token"):
++        return unavailable
++    try:
++        result = _anthropic_usage_from_token(row["access_token"])
++    except (httpx.HTTPError, OSError, ValueError, _Skip):
++        return unavailable
++    return {**result, **metadata}
++
++
+ def fetch_anthropic():
+     """Anthropic quota windows: Hermes sign-in first, Claude Code fallback.
+ 
+@@ -400,12 +430,94 @@ def fetch_anthropic():
+     and no Claude Code credentials means the provider is unconfigured and
+     stays hidden.
+     """
++    selected = _selected_anthropic_usage()
++    if selected is not None:
++        return selected
+     payload = _hermes_usage("anthropic")
+     if payload is not None:
+         return payload
+     token = _claude_code_oauth_token()
+     if not token:
+         raise _Skip("anthropic")
++    return _anthropic_usage_from_token(token)
++
++
++# Anthropic's /api/oauth/usage endpoint rate-limits hard (429). Desktop polls
++# with ?fresh=1 every minute, so Anthropic gets its own floor interval, a 429
++# backoff, and the last good result per token is served while limited.
++ANTHROPIC_MIN_INTERVAL = 300.0
++ANTHROPIC_429_BACKOFF = 900.0
++_anthropic_cache = {}  # token sha256 -> {"at", "result", "blocked_until"}
++_anthropic_lock = threading.Lock()
++_anthropic_loaded = False
++
++
++def _anthropic_cache_path():
++    try:
++        from hermes_constants import get_hermes_home
++        return Path(get_hermes_home()) / "cache" / "provider-usage-anthropic.json"
++    except Exception:
++        return Path.home() / ".hermes" / "cache" / "provider-usage-anthropic.json"
++
++
++def _anthropic_cache_load():
++    global _anthropic_loaded
++    if _anthropic_loaded:
++        return
++    _anthropic_loaded = True
++    try:
++        data = json.loads(_anthropic_cache_path().read_text(encoding="utf-8"))
++        if isinstance(data, dict):
++            _anthropic_cache.update({k: v for k, v in data.items() if isinstance(v, dict)})
++    except (OSError, ValueError):
++        pass
++
++
++def _anthropic_cache_save():
++    path = _anthropic_cache_path()
++    try:
++        path.parent.mkdir(parents=True, exist_ok=True)
++        tmp = path.with_suffix(".tmp")
++        tmp.write_text(json.dumps(_anthropic_cache), encoding="utf-8")
++        tmp.replace(path)
++    except OSError:
++        pass
++
++
++def _anthropic_usage_from_token(token):
++    import hashlib
++    key = hashlib.sha256(token.encode("utf-8")).hexdigest()
++    now = time.time()
++    with _anthropic_lock:
++        _anthropic_cache_load()
++        entry = _anthropic_cache.get(key) or {}
++        good = entry.get("result")
++        if good is not None and now - entry.get("at", 0) < ANTHROPIC_MIN_INTERVAL:
++            return dict(good)
++        if now < entry.get("blocked_until", 0):
++            if good is not None:
++                return dict(good)
++            raise _RateLimited(entry["blocked_until"])
++    try:
++        result = _anthropic_usage_fetch(token)
++    except _RateLimited as exc:
++        # Keep the upstream hold in the token cache so account changes can
++        # fetch independently and process restarts retain the backoff.
++        with _anthropic_lock:
++            entry = _anthropic_cache.setdefault(key, {})
++            entry["blocked_until"] = max(time.time() + ANTHROPIC_429_BACKOFF, exc.reset_at)
++            good = entry.get("result")
++            _anthropic_cache_save()
++        if good is not None:
++            return dict(good)
++        raise
++    with _anthropic_lock:
++        _anthropic_cache[key] = {"at": time.time(), "result": result, "blocked_until": 0}
++        _anthropic_cache_save()
++    return dict(result)
++
++
++def _anthropic_usage_fetch(token):
+     d = _http_json(
+         "https://api.anthropic.com/api/oauth/usage",
+         {
+@@ -904,7 +1016,7 @@ def _decorate(pid, p, now):
+         v = w.get("percent")
+         if not isinstance(v, (int, float)):
+             continue
+-        key = (pid, str(w.get("label") or "?"))
++        key = (pid, p.get("credential_id"), str(w.get("label") or "?"))
+         _record(key, float(v), now)
+         eta = _project(key, float(v), 100.0, now)
+         if eta is not None:
+@@ -979,15 +1091,35 @@ def _collect():
+     return {"fetched_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "providers": providers}
+ 
+ 
++def _selection_cache_scope():
++    from hermes_constants import get_hermes_home
++    scope: list[object] = [str(get_hermes_home())]
++    try:
++        from hermes_cli.auth_usage_selection import get_usage_login_selection, usage_login_selection_was_recorded
++    except ImportError:
++        return tuple(scope)
++    for provider in ("anthropic", "openai-codex"):
++        choice = get_usage_login_selection(provider) or {}
++        scope.append((provider, usage_login_selection_was_recorded(provider),
++                      choice.get("credential_id"), choice.get("selected_at"), choice.get("login_at")))
++    return tuple(scope)
++
++
+ def payload(fresh=False):
+     """Cached aggregate payload; ``fresh=True`` forces a provider round-trip."""
+     with _lock:
+         now = time.time()
+-        if not fresh and _cache["payload"] is not None and now - _cache["at"] < TTL:
++        scope = _selection_cache_scope()
++        if _cache.get("scope") != scope:
++            # Provider-level holds and stale readings belong to this selection.
++            _holds.clear()
++            _last_good.clear()
++        if not fresh and _cache.get("scope") == scope and _cache["payload"] is not None and now - _cache["at"] < TTL:
+             return _cache["payload"]
+         result = _collect()
+         _cache["at"] = now
+         _cache["payload"] = result
++        _cache["scope"] = scope
+         return result
+ 
+ 
+diff --git a/tests/conftest.py b/tests/conftest.py
+new file mode 100644
+index 0000000..4c1a121
+--- /dev/null
++++ b/tests/conftest.py
+@@ -0,0 +1,18 @@
++"""Keep plugin tests inside an isolated Hermes credential scope."""
++from pathlib import Path
++import sys
++
++import pytest
++
++
++@pytest.fixture(autouse=True)
++def isolated_hermes_auth(tmp_path, monkeypatch):
++    home = tmp_path / "plugin-hermes"
++    home.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    # Upstream unittest classes share one module across isolated test homes.
++    api = sys.modules.get("provider_usage_api")
++    if api is not None:
++        api._anthropic_cache.clear()
++        api._anthropic_loaded = False
+diff --git a/tests/test_account_selection.py b/tests/test_account_selection.py
+new file mode 100644
+index 0000000..1ad1c37
+--- /dev/null
++++ b/tests/test_account_selection.py
+@@ -0,0 +1,131 @@
++"""Persisted display selection is independent from inference priority."""
++import importlib.util
++from pathlib import Path
++from unittest.mock import patch
++
++import pytest
++
++from hermes_cli.auth import write_credential_pool
++from hermes_cli.auth_usage_selection import record_usage_login_selection, clear_usage_login_selection
++
++
++@pytest.fixture
++def api(tmp_path, monkeypatch):
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    home = tmp_path / "hermes"
++    home.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    write_credential_pool("anthropic", [
++        dict(id="first", label="first", priority=0, source="manual:hermes_pkce",
++             auth_type="oauth", access_token="fixture-first"),
++        dict(id="chosen", label="chosen", priority=1, source="manual:hermes_pkce",
++             auth_type="oauth", access_token="fixture-chosen")])
++    spec = importlib.util.spec_from_file_location("selection_test_api",
++        Path(__file__).resolve().parents[1] / "dashboard" / "plugin_api.py")
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++def test_usage_fetches_saved_selection_even_when_work_priority_differs(api):
++    record_usage_login_selection("anthropic", "chosen", account_email="chosen@example.com")
++    with patch.object(api, "_http_json", return_value={"five_hour": {"utilization": 0.5}}) as get:
++        result = api.fetch_anthropic()
++    assert result.get("credential_id") == "chosen"
++    assert result["windows"][0]["percent"] == 0.5
++    assert get.call_args.args[1]["Authorization"] == "Bearer fixture-chosen"
++    assert result["account_email"] == "chosen@example.com"
++
++
++def test_deleted_selected_credential_does_not_substitute_another_account(api):
++    record_usage_login_selection("anthropic", "missing")
++    with patch.object(api, "_http_json") as get:
++        result = api.fetch_anthropic()
++    assert result["status"] == "unavailable"
++    get.assert_not_called()
++
++
++def test_cached_payload_changes_scope_after_selection(api):
++    from hermes_cli.auth_usage_selection import get_usage_login_selection
++    record_usage_login_selection("anthropic", "first")
++    def collect():
++        return {"selected": get_usage_login_selection("anthropic")["credential_id"]}
++    with patch.object(api, "_collect", side_effect=collect):
++        assert api.payload()["selected"] == "first"
++        record_usage_login_selection("anthropic", "chosen")
++        assert api.payload()["selected"] == "chosen"
++
++
++def test_collector_preserves_active_profile_scope(api, tmp_path, monkeypatch):
++    from hermes_constants import set_hermes_home_override, reset_hermes_home_override
++    record_usage_login_selection("anthropic", "first")
++    profile = tmp_path / "profile"
++    profile.mkdir()
++    token = set_hermes_home_override(profile)
++    try:
++        write_credential_pool("anthropic", [dict(id="profile-account", label="profile", priority=0,
++            source="manual:hermes_pkce", auth_type="oauth", access_token="fixture-profile")])
++        record_usage_login_selection("anthropic", "profile-account")
++        monkeypatch.setattr(api, "FETCH_ORDER", ("anthropic",))
++        with patch.object(api, "_http_json", return_value={"five_hour": {"utilization": 1.0}}):
++            result = api._collect()
++        assert result["providers"][0].get("credential_id") == "profile-account"
++    finally:
++        reset_hermes_home_override(token)
++
++
++def test_logout_selection_does_not_fall_back_to_other_account(api):
++    record_usage_login_selection("anthropic", "chosen")
++    clear_usage_login_selection("anthropic")
++    with patch.object(api, "_http_json") as get:
++        result = api.fetch_anthropic()
++    assert result["status"] == "unavailable"
++    get.assert_not_called()
++
++
++def test_upstream_rate_limit_is_persisted_per_token(api, monkeypatch):
++    monkeypatch.setattr(api.time, "time", lambda: 1000.0)
++    record_usage_login_selection("anthropic", "first")
++    with patch.object(api, "_http_json", side_effect=api._RateLimited(3000.0)) as get:
++        with pytest.raises(api._RateLimited):
++            api.fetch_anthropic()
++        assert get.call_count == 1
++    assert api._anthropic_cache_path().is_file()
++    api._anthropic_cache.clear()
++    api._anthropic_loaded = False
++    with patch.object(api, "_http_json") as get:
++        with pytest.raises(api._RateLimited):
++            api.fetch_anthropic()
++        get.assert_not_called()
++    record_usage_login_selection("anthropic", "chosen")
++    with patch.object(api, "_http_json", return_value={"five_hour": {"utilization": 7}}) as get:
++        assert api.fetch_anthropic()["credential_id"] == "chosen"
++        assert get.call_count == 1
++
++
++def test_rate_limit_serves_last_good_and_honors_floor(api, monkeypatch):
++    clock = [1000.0]
++    monkeypatch.setattr(api.time, "time", lambda: clock[0])
++    with patch.object(api, "_http_json", return_value={"five_hour": {"utilization": 7}}) as get:
++        first = api._anthropic_usage_from_token("fixture-token")
++        assert api._anthropic_usage_from_token("fixture-token") == first
++        assert get.call_count == 1
++    clock[0] += api.ANTHROPIC_MIN_INTERVAL + 1
++    with patch.object(api, "_http_json", side_effect=api._RateLimited(clock[0] + 60)) as get:
++        assert api._anthropic_usage_from_token("fixture-token") == first
++        clock[0] += 61
++        assert api._anthropic_usage_from_token("fixture-token") == first
++        assert get.call_count == 1
++
++
++def test_selection_change_clears_upstream_provider_holds_and_stale_readings(api):
++    record_usage_login_selection("anthropic", "first")
++    monkey_payload = {"providers": []}
++    with patch.object(api, "_collect", return_value=monkey_payload):
++        api.payload()
++        api._holds["anthropic"] = float("inf")
++        api._last_good["anthropic"] = {"credential_id": "first"}
++        record_usage_login_selection("anthropic", "chosen")
++        api.payload()
++    assert not api._holds
++    assert not api._last_good

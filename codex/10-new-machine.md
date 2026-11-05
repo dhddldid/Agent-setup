@@ -1,15 +1,16 @@
 # macOS MacBook 설치 기준
 
-이 문서는 검증된 macOS 설치의 완료 기준이다. WSL2는 [README](README.md)의 안내처럼 AI가 스킬·작업 기준을 재사용할 수 있으나 Linux에 맞는 설치·검증이 필요하다. macOS에서는 사용자가 README의 요청문만 보낸다. 이 문서는 설정을 맡은 AI의 **완료 조건**이며 고정 명령 순서가 아니다. AI는 대상 MacBook·계정·앱에서 가능한 방법을 선택하고, 필요한 준비·검사·오류 수정을 수행한다.
+이 문서는 검증된 macOS 설치의 완료 기준이다. WSL2는 [README](README.md)의 안내처럼 AI가 스킬·작업 기준을 재사용할 수 있으나 Linux에 맞는 설치·검증이 필요하다. macOS에서는 사용자가 README의 요청문만 보낸다. 이 문서는 설정을 맡은 AI의 **완료 조건**이다. 명령 순서는 AI가 정한다. AI는 대상 MacBook·계정·앱에서 가능한 방법을 선택하고, 필요한 준비·검사·오류 수정을 수행한다.
 
 ## 버전 선택
 
 - Codex 앱에서 실제 사용할 수 있는 Sol·Astra·Luna 최신 모델을 확인한다. [모델 분류와 추론 수준](11-working-method.md#모델-역할)은 유지하고, 사용할 수 없는 조합을 임의 대체하지 않는다.
 - Python·uv·CodeGraph와 호환되는 Node·Ollama가 대상 Mac에서 동작한다. 이미 있는 도구는 호환성과 상태를 확인하고, 준비 방법은 AI가 환경과 공식 문서를 보고 선택한다.
-- GAM·CodeGraph와 63개 스킬은 설치 시점의 공식 안정 릴리스 또는 검토된 upstream 커밋을 기준으로 구성한다. 출시 버전이 없는 스킬은 변경 내용·라이선스·호환성을 검토한다. upstream에서 없어진 스킬은 대체 경로 또는 보존 사유를 기록한다.
-- `inventories/tools.lock.json`, CodeGraph 의존성 잠금 파일, `config/models.json`은 **마지막으로 검증한 기준**이다. 더 새롭고 호환되는 버전이 있으면 잠금 파일을 갱신해 격리 설치와 관련 회귀·실제 도구 검사를 통과시킨 뒤 적용한다. 새 버전이 실패하면 검증된 기준으로 복귀하고 선택 이유를 보고한다. 버전 번호만 보고 설치 성공으로 간주하지 않는다.
-- 더 새롭고 호환되는 버전을 선택했다면 도구 잠금 파일과 의존성 명세에 반영하고 관련 검사와 실제 도구 동작을 확인한다. Ollama 서비스·모델·임베딩 응답은 GAM과 별도로 확인한다.
-- 이미 설치된 외부 스킬은 검토된 upstream과 비교한다. 갱신 범위에 포함되면 기존 파일과 출처 기록을 보존하고 새 설치본의 동작을 확인한다.
+- GAM·CodeGraph와 외부 스킬은 설치기가 실행할 때마다 원본의 최신 정식 릴리스를 조회해 설치한다. `scripts/setup_runtime.py`는 CodeGraph를 최신 정식 태그의 npm 패키지로, GAM을 최신 정식 태그 커밋에서 `uv tool install`로 설치하고, 결정한 태그·커밋을 `~/Library/Application Support/codex-setup/tool-releases.json`에 기록한다. 정식 릴리스를 내지 않는 원본은 기본 브랜치의 최신 커밋을 받는다.
+- `inventories/tools.lock.json`과 `inventories/external-skills.json`에는 원본 저장소·패키지·설치 방법·스킬 경로만 둔다. `config/models.json`은 검증한 모델 식별자 기준이다. 설치 결과는 버전 번호와 함께 실제 도구 동작으로 확인한다.
+- 새 정식 릴리스가 설치에 실패하면 실패한 단계와 오류를 보고하고 원인을 고친다. Ollama 서비스·모델·임베딩 응답은 GAM과 별도로 확인한다.
+- 이미 설치된 외부 스킬은 `scripts/install_external_skills.py --all --apply --refresh`로 최신 정식판과 대조한다. 설치 당시와 같은 폴더만 교체하고, 사용자가 고친 폴더는 백업 후 `--replace-existing`으로 교체할지 사용자 요청 범위에서 정한다.
+- 설치 뒤 업데이트는 Agent-setup 루트의 `bash scripts/update_claude_codex.sh` 한 줄로 한다. OMH 스킬 사본을 최신 정식 태그로 맞추고 관리 지침·공통 스킬·외부 스킬을 다시 설치한다.
 
 ## 완료 조건
 

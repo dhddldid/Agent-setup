@@ -53,7 +53,7 @@ Bad example:
 
 Use when Hermes should identify security, prompt-injection, tool-permission, secret, dependency, destructive-action, or explicit local plugin risks before execution or release.
 
-    Strong routing signals: `security-safety-review`, `security safety review`, `ai coding safety`, `agent safety review`, `prompt injection review`, `tool permission review`, `secret exposure review`, `destructive action review`, `supply chain safety`, `sandbox safety`, `plugin risk audit`, `Hermes plugin audit`, `local plugin guard`, `key rotation`, `secret rotation`, `credential rotation`, `certificate rotation`, `rotate the api key`, `rotate this api key`, `rotate the credentials`, `revoke the old key`, `보안 안전 검토`, `에이전트 안전`, `프롬프트 인젝션`, `시크릿 노출`, `파괴적 명령`
+    Strong routing signals: `security-safety-review`, `security safety review`, `ai coding safety`, `agent safety review`, `prompt injection review`, `tool permission review`, `secret exposure review`, `destructive action review`, `supply chain safety`, `sandbox safety`, `plugin risk audit`, `Hermes plugin audit`, `local plugin guard`, `key rotation`, `secret rotation`, `credential rotation`, `certificate rotation`, `rotate the api key`, `rotate this api key`, `rotate the credentials`, `revoke the old key`, `보안 안전 검토`, `에이전트 안전`, `프롬프트 인젝션`, `시크릿 노출`, `파괴적 명령`, `ревью безопасности`, `аудит безопасности`, `проверь на уязвимости`, `секьюрити ревью`, `утечка секретов в коде`
 
 ## Catalog Metadata
 
@@ -134,7 +134,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

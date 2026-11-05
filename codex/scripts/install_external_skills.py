@@ -1,7 +1,7 @@
 """Install reviewed external skills with recoverable, explicit replacements."""
 import argparse, datetime, hashlib, json, os, re, shutil, subprocess, tempfile
 from pathlib import Path, PurePosixPath
-from setup_runtime import ROOT, state_root, write_json
+from setup_runtime import ROOT, state_root, write_json, resolve_source
 
 # Source checkouts run with the Git LFS filter turned off. LFS-tracked files stay as pointer
 # files, so a source repository with LFS media downloads no media and clones even where the
@@ -54,6 +54,7 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
     lockfile = state/lockname
     lock = json.loads(lockfile.read_text()) if lockfile.exists() else {}
     results = {}
+    resolved = {}
     with tempfile.TemporaryDirectory(prefix='codex-work-packs-') as temp:
         checkouts = {}
         for name in names:
@@ -70,7 +71,10 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
             recorded = lock.get(name)
             if recorded and recorded.get('source') != item['sourceUrl'] and not refresh:
                 raise RuntimeError('Source changed since installation: '+name)
-            revision = item.get('ref') if refresh else recorded['commit'] if recorded else item.get('ref')
+            if item['sourceUrl'] not in resolved:
+                resolved[item['sourceUrl']] = resolve_source(item['sourceUrl'])
+            release = resolved[item['sourceUrl']]
+            revision = release['commit']
             key = (item['sourceUrl'], revision)
             if key not in checkouts:
                 checkout = Path(temp)/str(len(checkouts))
@@ -80,10 +84,18 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
                     subprocess.run([*GIT,'-C',str(checkout),'checkout','--quiet','--detach',revision],check=True)
                 checkouts[key] = checkout
             checkout = checkouts[key]
+            if not (checkout/Path(*PurePosixPath(item['skillPath']).parts)).is_file():
+                # The latest release dropped or moved this skill: keep the installed copy and report it.
+                print('Missing in latest release',name,release['tag'] or 'default-branch',item['skillPath'])
+                results[name] = 'missing_upstream_preserved'
+                continue
             source = source_folder(checkout,item['skillPath'])
             target_root.mkdir(parents=True,exist_ok=True)
             commit = subprocess.check_output([*GIT,'-C',str(checkout),'rev-parse','HEAD'],text=True).strip()
-            next_lock = {'source':item['sourceUrl'],'commit':commit,'path':item['skillPath'],
+            if commit != revision:
+                raise RuntimeError('Checkout differs from resolved commit: '+name)
+            print('Resolved',name,release['tag'] or 'default-branch',commit)
+            next_lock = {'source':item['sourceUrl'],'tag':release['tag'],'commit':commit,'path':item['skillPath'],
                          'sha256':hashlib.sha256((source/'SKILL.md').read_bytes()).hexdigest()}
             if target.exists():
                 if not target.is_dir():
@@ -162,9 +174,15 @@ def main():
     if not names:
         parser.error('Provide skill names or --all')
     if not args.apply:
+        resolved = {}
         for name in names:
+            if name not in entries:
+                parser.error('Unknown work-pack skill: '+name)
             item = entries[name]
-            print(name,item['sourceUrl'],item['skillPath'])
+            if item['sourceUrl'] not in resolved:
+                resolved[item['sourceUrl']] = resolve_source(item['sourceUrl'])
+            release = resolved[item['sourceUrl']]
+            print(name,item['sourceUrl'],item['skillPath'],release['tag'] or 'default-branch',release['commit'])
         return
     state = args.state or state_root(args.home)
     print(json.dumps(install(names,catalog=args.catalog,home=args.home,state=state,

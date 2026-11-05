@@ -89,3 +89,5 @@
 
 
 !/15-local-task-readiness.md
+!/scripts/merge_codex_agents.py
+!/tests/test_merge_codex_agents.py

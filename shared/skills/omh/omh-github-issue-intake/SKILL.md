@@ -53,7 +53,7 @@ Bad example:
 
 Use when a public chat report should become a new GitHub issue: classify it, ask at most three decision-changing questions, search duplicates, confirm the direction, and hand the scoped creation to an authorized connector.
 
-    Strong routing signals: `github-issue-intake`, `github issue intake`, `issue intake`, `file this as an issue`, `file a github issue`, `open a github issue`, `create a github issue`, `submit a github issue`, `report a bug as an issue`, `new github issue`, `이슈로 올려줘`, `깃허브 이슈로 올려줘`, `이슈 등록해줘`, `깃허브 이슈 등록해줘`, `깃허브 이슈 만들어줘`, `깃허브 이슈 생성해줘`, `버그 리포트 올려줘`, `새 이슈 만들어줘`
+    Strong routing signals: `github-issue-intake`, `github issue intake`, `issue intake`, `file this as an issue`, `file a github issue`, `open a github issue`, `create a github issue`, `submit a github issue`, `report a bug as an issue`, `new github issue`, `이슈로 올려줘`, `깃허브 이슈로 올려줘`, `이슈 등록해줘`, `깃허브 이슈 등록해줘`, `깃허브 이슈 만들어줘`, `깃허브 이슈 생성해줘`, `버그 리포트 올려줘`, `새 이슈 만들어줘`, `создай issue`, `заведи ишью`, `оформи как issue`, `зарепорть баг на гитхаб`, `сделай ишью на гитхабе`, `заведи issue на гитхабе`
 
 ## Catalog Metadata
 
@@ -129,7 +129,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

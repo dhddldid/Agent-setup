@@ -40,8 +40,8 @@
 
 - 실제 Git 루트와 대상 경로에서 가장 가까운 AGENTS.md를 확인한다. Git 루트 밖 상위 폴더의 지침은 직접 읽는다.
 - 제품 목적·계정·데이터·배포 경계와 검사 명령은 프로젝트 AGENTS.md를 따른다. 지침이 충돌하면 현재 사용자 지시, 가장 가까운 프로젝트 AGENTS.md, 이 전역 지침 순서로 따른다.
-- 프로젝트 작업을 시작하면 GAM(gam-memory 스킬)에서 해당 프로젝트의 과거 결정·문제 해결 경험을 프로젝트 절대 경로로 찾고 현재 소스와 대조한다.
-- 작업을 마칠 때 이번 작업에서 확정된 결정, 실제 검증한 해결책, 사용자의 교정을 GAM에 project 범위로 저장하고 바로 활성화한다. 이 규칙이 gam-memory 스킬의 상시 승인 근거다. 프로젝트가 GAM에 없으면 memory_projects로 Git 루트를 등록한 뒤 저장한다. 각 기억에는 출처(파일·커밋·검증 명령)와 확인 날짜를 붙이고, 추측·진행 상태·비밀값·대화 원문은 저장하지 않는다. 같은 주제의 이전 결정이 바뀌면 새 기억으로 대체 처리한다.
+- 프로젝트 작업을 시작하면 GAM(gam-memory 스킬)을 먼저 조회한다. 프로젝트 절대 경로로 등록된 이름·ID와 계정 범위를 확인하고 활성 기억을 현재 출처·유효기간과 대조한다.
+- 오래 유지할 사용자 사실·결정·교정은 같은 턴의 다른 도구 호출 전에 한 사실씩 GAM project 범위에 저장하고, 해결책은 검증 근거가 생겼을 때 저장한다. 이 규칙은 auto-safe 모드에서 안전·비중복·비파생·절대 날짜 조건을 모두 충족한 후보의 상시 승인 근거다. review-first 모드와 검토가 필요한 후보는 승인 대기로 두며 off 모드에서는 저장을 멈춘다. gam-memory 절차에 따라 출처·확인 날짜·유형·보존 클래스를 붙이고 승인 뒤 정확한 ID와 프로젝트 검색을 확인한다. 바뀐 결정은 새 기억과 명시적으로 대체 연결한다.
 - 코드 작업을 시작하면 대상 Git 저장소에서 CodeGraph를 사용한다. 이 규칙이 codegraph-context 스킬의 색인 생성 승인 근거다. 색인이 없으면 만들고 `.codegraph/`를 해당 저장소의 `.git/info/exclude`에 추가하며, 있으면 변경분을 맞춘 뒤 조회하고 원본 파일을 읽는다. 문서·미디어 전용 폴더와 홈 전체는 색인하지 않는다. CodeGraph 결과는 정확성이나 테스트 통과의 근거로 쓰지 않는다.
 
 ## 코드 구조
@@ -57,13 +57,13 @@
 
 - 실행기 기본 기억(새 세션마다 주입되는 메모)에는 모든 세션에 필요한 사실만 둔다: 사용자가 누구인지와 선호, 안정된 환경 사실, 특정 작업에 속하지 않는 상시 규약. "사용자는 짧은 답을 선호한다"처럼 서술형 사실로 쓴다. 명령형 문장은 다음 세션에서 현재 요청보다 앞서는 지시로 읽히기 때문이다.
 - 작업 중 배운 절차·함정·사용자의 교정은 그 작업의 스킬에 기록한다. 프로젝트 결정과 검증된 해결 경험은 GAM에, 현재 계약과 상태는 프로젝트 docs에 둔다. 실행기 자체 기억 장치(Hermes의 OMH 기억 등)에는 그 실행기 작업 방식의 교훈만 두고, 프로젝트 지식은 GAM에 저장해 다른 실행기와 함께 쓴다.
-- 일주일 안에 낡을 사실, 작업 진행 상태, 완료 기록, 임시 TODO, 원본 데이터는 과거 대화 검색으로 찾는다. 기본 기억이 한도에 가까우면 새 항목을 더하기 전에 낡은 항목을 합치거나 지운다.
-- 기억 내용은 현재 소스와 대조한 뒤 사용한다. 출처를 확인할 수 없는 항목은 근거로 쓰지 않고, 반대 근거로도 쓰지 않는다.
-- 한시적인 GAM 기억에는 `temporary`와 `expires:YYYY-MM-DD` 태그를 붙인다. 주간 보존 작업이 만료된 임시 기억을 보관 처리하고, 180일 동안 갱신되지 않은 일반 기억을 검토 후보로 보고한다. GAM 기억은 영구 삭제하지 않는다. 대화 기록·캐시·생성 파일·CodeGraph 색인의 보존 기간은 Agent-setup의 `shared/retention/policy.json`을 따른다.
+- 작업 진행·완료 기록·임시 TODO·원본 대화·로그·붙여넣은 지시는 작업 기록과 과거 대화 검색에서 찾는다. 사용자 턴 5회마다 축적 내용을 검토하고, 종료·복구 시에도 같은 5회 기준을 적용한다. 압축·중복·만료 조건과 측정된 기본 기억 여유 부족은 별도 검토 계기다. 같은 상시 조건의 알림은 한 번만 내고 실제 정리 결과와 검토 준비를 구분한다.
+- 기억은 현재 출처와 대조한 뒤 사용한다. 만료·검토 기한 경과·대체·거절·출처 확인 불가 항목은 일반 근거에서 제외한다. 거절 결정은 사용자가 다시 꺼내거나 명시적으로 검토할 때 범위·안전·날짜를 확인해 별도 부정 근거로 회수한다. 압축 뒤 출처가 부족한 원래 기억은 보존하고 검증 대기로 둔다.
+- GAM 보존은 shared/retention/policy.json을 따른다. 모델 저장 기본은 durable(기본 TTL·검토 기한 없음), standard 일반 유형은 90일 검토·episode는 30일 TTL, volatile은 기본 7일(1~7일) TTL이다. 미해결 결정은 90일 검토·14일 재질문·비durable 365일 상한으로 관리한다. TTL 만료는 즉시 일반 회수에서 제외하고 주간 작업에서 정확한 ID·사유를 보고한 뒤 승인 범위의 항목을 hard_delete=false로 보관하며 결과를 재조회한다. 로컬 보관 보호 항목도 만료 보고에 포함한다. 대화·캐시·생성 파일·색인 보존은 같은 정책의 별도 항목을 따른다.
 
 ## 작업 흐름과 스킬
 
-- 일반 답변·작은 수정은 바로 처리한다. 복합 작업은 coding-plan으로 요구사항과 검증 방법을 연결하고, 분담은 coding-work와 coding-handoff, 리뷰는 coding-code-review, 완료 판단은 coding-verification을 사용한다.
+- 일반 답변·작은 수정은 바로 처리한다. 복합 작업의 전체 흐름은 아래 `OMH workflow skills` 절에 따라 OMH 워크플로(ulw-work·ulw-loop·ulw-plan·omh-code-review·omh-verification-gate)로 고른다. coding-plan(요구사항과 검증 방법 연결), coding-work·coding-handoff(분담), coding-code-review(리뷰), coding-verification(완료 판단)은 그 흐름의 각 단계 안에서 기준으로 함께 적용한다.
 - 위치·관계 파악은 codegraph-context, 원인 불명 실패는 diagnosing-bugs, 중요한 로직은 tdd, 구현 단순화는 ponytail, 반복 실패와 중단 작업 재개는 coding-repair를 사용한다.
 - 실패 처리 감사는 coding-failure-audit, 설계 반례는 coding-design-review, 제품 문구는 coding-ai-slop-review, 기술부채는 coding-debt-audit를 사용한다.
 - 화면 작업은 OMH frontend·visual-qa 기준을 Claude Code·Codex에 맞춘 product-design-review로 구현·검증한다. 사용자가 레퍼런스 선택을 요청하거나 에이전트의 제안에 동의하면 실제 사례 최소 5개를 추천하고 사용자가 고른 방향을 구현한다. 그 외에는 제품 목적·기존 브랜드·현재 디자인 기준으로 진행한다.
@@ -71,12 +71,20 @@
 - 한국어 문장 다듬기는 humanize-korean, 영문은 humanizer, AGENTS.md·스킬 작성은 writing-for-agents, 과거 결정 회수·저장은 gam-memory, 기억·기록 정리는 coding-maintenance, 이 AI 작업 환경의 설정 변경은 agent-setup-maintenance를 사용한다.
 - 다른 실행기용으로 쓰인 스킬의 도구 이름은 대응 도구로 바꿔 수행한다: `terminal()`은 셸 명령, `delegate_task`는 하위 에이전트 위임, `cronjob`은 예약 작업, `vision_analyze`는 이미지 읽기, `browser_navigate`는 Aside `repl`, `skill_view`는 스킬 파일 읽기.
 
-## OMH 워크플로 스킬
+## OMH workflow skills
 
-- OMH(oh-my-hermes) 스킬(`omh-*`, `ulw-*`)이 설치되어 있다. 요청이 계획·검토·조사·운영·디자인처럼 결과를 문서나 근거로 남겨야 하는 작업이면 맞는 OMH 스킬을 읽고 그 절차를 따른다. 일반 답변과 한 번에 끝나는 조회는 바로 처리한다.
-- 같은 일을 하는 공통 스킬(coding-*)과 OMH 스킬이 함께 맞으면 OMH 스킬의 절차를 우선하고, 공통 스킬의 보고·검증 기준을 함께 적용한다.
-- OMH 스킬은 Hermes 도구 이름을 쓴다. 이 실행기에서는 대응 수단으로 같은 결과를 만든다: `omh_todo`는 실행기의 할 일 목록, `omh_memory`는 GAM(gam-memory), `omh_delegate_route`·`delegate_task`는 아래 모델 라우팅에 따른 위임, `omh_jev_ask`는 다른 모델 계열에 맡긴 독립 검토, `omh_codegraph_summary`는 CodeGraph, `omh_agent_board`·`omh_run_summary`는 작업 폴더의 Markdown 기록, `omh_reviewed`·`omh_operation_artifact`는 결과 파일과 검증 기록이다. 그 밖의 `omh_*` 도구는 같은 산출물을 파일과 명령으로 만든다.
-- OMH 기록은 작업 대상 저장소의 `.omh/`에 둔다. OMH 스킬이 말하는 준비 상태와 실제 실행·검증 결과를 구분해 보고한다.
+OMH (oh-my-hermes) workflow skills (`omh-*`, `ulw-*`) are installed. Before acting on a work request in any language, choose the overall workflow by task shape; make this choice yourself:
+- Use `ulw-work` with lanes for a multi-part job with ordered dependencies or parallel parts. (`dag-ulw` needs the Hermes `omh_dag` runtime, so this executor runs that shape as `ulw-work` lanes.)
+- Use `ulw-work` to implement an accepted plan across lanes.
+- Use `ulw-loop` for a long goal requiring repeated research, build, and verification cycles.
+- Use `ulw-plan` or `omh-plan` for an undecided or risky plan.
+- Use `omh-code-review` for a review.
+- Act directly on one small, bounded change, a general answer, or a one-shot lookup.
+Load the chosen workflow skill and follow it. Before claiming completion, load and follow `omh-verification-gate`.
+
+- Apply custom and project skills (GAM, CodeGraph, Aside, coding-*, project skills) inside the chosen workflow for project rules, accounts, tools, and checks; have each lane load the relevant skills. These skills run inside the workflow and leave the workflow choice in place. When a coding-* skill and an OMH skill fit the same job, follow the OMH procedure and also apply the coding-* reporting and verification criteria.
+- OMH skills use Hermes tool names. Produce the same result with this executor's equivalents: `omh_todo` is the executor's task list, `omh_memory` is GAM (gam-memory), `omh_delegate_route` and `delegate_task` are delegation under the model routing below, `omh_jev_ask` is an independent review by a different model family, `omh_codegraph_summary` is CodeGraph, `omh_agent_board` and `omh_run_summary` are Markdown records in the working folder, and `omh_reviewed` and `omh_operation_artifact` are result files and verification records. Any other `omh_*` tool produces the same artifact with files and commands.
+- Keep OMH records in `.omh/` of the target repository. Report prepared plans and handoffs separately from observed execution and verification results.
 
 ## 브라우저 작업 (Aside)
 

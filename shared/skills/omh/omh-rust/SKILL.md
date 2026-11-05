@@ -36,7 +36,7 @@ Bad example:
 - The escalation verdict is stated with the trigger that decided it.
 - The ownership shape names owners, borrows across boundaries, and every deliberate clone.
 - The error type, its conversion boundary, and every surviving `unwrap`/`expect`/`panic!` are named.
-- The gate list names the exact commands the executor must run and pass.
+- The gate list names the exact commands the executor must run and pass, covering every target, the feature extremes, doc tests, and the declared MSRV.
 - An escalated change carries the Miri, sanitizer, and concurrency-testing requirements as blocking items.
 - Compiler, clippy, test, Miri, sanitizer, and loom results stay observed-only.
 
@@ -55,7 +55,7 @@ Bad example:
 
 Use when Hermes should prepare a Rust change: ownership and lifetime shape, error and API types, cargo/clippy gates, and the mandatory UB escalation when the change touches unsafe, raw pointers, FFI, MaybeUninit, or lock-free primitives.
 
-    Strong routing signals: `rust`, `rust code`, `rust skill`, `rustlang`, `borrow checker`, `lifetime error`, `ownership error`, `trait bound`, `cargo build`, `cargo clippy`, `clippy lint`, `unsafe rust`, `unsafe block`, `raw pointer`, `maybeuninit`, `rust ffi`, `extern c`, `undefined behavior`, `miri`, `loom`, `ボローチェッカー`, `所有権エラー`, `ライフタイムエラー`, `トレイト境界`, `러스트`, `러스트 코드`, `빌림 검사기`, `소유권 에러`, `라이프타임 에러`, `언세이프`, `미정의 동작`, `借用检查器`, `所有权错误`, `生命周期错误`, `特征约束`, `bantu atasi error borrow checker`, `perbaiki masalah ownership Rust`, `jelaskan error lifetime Rust`, `tolong beresin error cargo clippy`, `tinjau blok unsafe Rust ini`
+    Strong routing signals: `rust`, `rust code`, `rust skill`, `rustlang`, `borrow checker`, `lifetime error`, `ownership error`, `trait bound`, `cargo build`, `cargo clippy`, `clippy lint`, `unsafe rust`, `unsafe block`, `raw pointer`, `maybeuninit`, `rust ffi`, `extern c`, `undefined behavior`, `miri`, `loom`, `ボローチェッカー`, `所有権エラー`, `ライフタイムエラー`, `トレイト境界`, `러스트`, `러스트 코드`, `빌림 검사기`, `소유권 에러`, `라이프타임 에러`, `언세이프`, `미정의 동작`, `借用检查器`, `所有权错误`, `生命周期错误`, `特征约束`, `bantu atasi error borrow checker`, `perbaiki masalah ownership Rust`, `jelaskan error lifetime Rust`, `tolong beresin error cargo clippy`, `tinjau blok unsafe Rust ini`, `giúp xử lý lỗi borrow checker`, `sửa vấn đề ownership trong Rust`, `giải thích lỗi lifetime trong Rust`, `hãy sửa lỗi cargo clippy`, `rà soát khối unsafe Rust này`
 
 ## Catalog Metadata
 
@@ -68,7 +68,7 @@ Reasoning demand: `standard`
 Quality bar:
 
 - Run the escalation check before anything else and state the verdict; a change whose `unsafe`/FFI status is unknown is escalated by default.
-- Load `references/rust-discipline.md` for the ownership, error, and API rules, and name the gate commands from it rather than assuming `cargo build` is the whole bar.
+- Load `references/rust-discipline.md` for the ownership, error, API, binary-interface, and dependency rules, and name the gate commands from it rather than assuming `cargo build` is the whole bar.
 - When the escalation triggers, load `references/ub-escalation.md` and carry its Miri, sanitizer, and loom-style concurrency requirements into the handoff as blocking items.
 - Name the ownership decision behind every clone, `Arc`, interior-mutability wrapper, and lifetime annotation the change introduces.
 - Name the error type and its conversion boundary; a surviving `unwrap` needs a written reason, not silence.
@@ -128,7 +128,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

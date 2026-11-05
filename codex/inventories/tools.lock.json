@@ -2,21 +2,16 @@
   "schema_version": 1,
   "codegraph": {
     "package": "@colbymchenry/codegraph",
-    "version": "1.6.2",
-    "source": "https://github.com/colbymchenry/codegraph",
-    "commit": "6560052a6f856855d3f71eee838fd66ccfa4285d"
+    "source": "https://github.com/colbymchenry/codegraph"
   },
   "gam": {
     "package": "global-memory-mcp",
-    "version": "0.1.7",
     "source": "https://github.com/ozankasikci/global-agent-memory",
-    "commit": "845581c523248248fe95dad270fd832e30ca5a6a",
-    "install_method": "uv_tool_git_commit",
+    "install_method": "uv_tool_git_release",
     "published_package_version_verified": false
   },
   "omh": {
     "source": "https://github.com/rlaope/oh-my-hermes",
-    "commit": "36e96feb432068cd27eecf5b434acdf1328341b4",
     "runtime_installed": false
   }
 }

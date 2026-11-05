@@ -12,6 +12,48 @@ from install_external_skills import install, source_folder
 
 
 class WorkPackInstallTests(unittest.TestCase):
+    def setUp(self):
+        # All fixture repositories resolve offline to their current default-branch head.
+        self.resolver = patch('install_external_skills.resolve_source', side_effect=lambda source: {
+            'tag': None, 'commit': subprocess.check_output(['git','-C',source,'rev-parse','HEAD'],text=True).strip()})
+        self.resolve = self.resolver.start()
+        self.addCleanup(self.resolver.stop)
+
+    def test_release_commit_wins_over_branch_and_stale_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root/'source'
+            source.mkdir()
+            (source/'SKILL.md').write_text('stable')
+            subprocess.run(['git','init','-q',str(source)],check=True)
+            def commit(message):
+                subprocess.run(['git','-C',str(source),'add','.'],check=True)
+                subprocess.run(['git','-C',str(source),'-c','user.name=Fixture',
+                                '-c','user.email=fixture@example.invalid','commit','-qm',message],check=True)
+                return subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()
+            stable = commit('stable')
+            (source/'SKILL.md').write_text('unreleased')
+            newer = commit('unreleased')
+            self.resolve.side_effect = None
+            self.resolve.return_value = {'tag':'v1.0.0','commit':stable}
+            catalog = root/'catalog.json'
+            catalog.write_text(json.dumps({'skills':{'alpha':{'sourceUrl':str(source),'skillPath':'SKILL.md'}}}))
+            kwargs = dict(catalog=catalog,home=root/'home',state=root/'state')
+            install(['alpha'],**kwargs)
+            target = root/'home/.agents/skills/alpha'
+            self.assertEqual((target/'SKILL.md').read_text(),'stable')
+            lockfile = root/'state/external-skills.lock.json'
+            self.assertEqual(json.loads(lockfile.read_text())['alpha']['tag'],'v1.0.0')
+            self.resolve.return_value = {'tag':'v2.0.0','commit':newer}
+            install(['alpha'],refresh=True,**kwargs)
+            self.assertEqual((target/'SKILL.md').read_text(),'unreleased')
+            self.assertEqual(json.loads(lockfile.read_text())['alpha']['commit'],newer)
+            # A missing copy uses the latest release even when its old receipt survives.
+            import shutil
+            shutil.rmtree(target)
+            install(['alpha'],**kwargs)
+            self.assertEqual((target/'SKILL.md').read_text(),'unreleased')
+
     def test_installs_grouped_source_and_preserves_later_edit(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -179,6 +221,28 @@ class WorkPackInstallTests(unittest.TestCase):
                                                                   'skillPath': 'skills/alpha/SKILL.md'}}}))
                 self.assertEqual(install(['alpha'], catalog=catalog, home=root/'home', state=root/'state'),
                                  {'alpha': 'installed'})
+
+    def test_skill_dropped_in_latest_release_keeps_installed_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root/'source'
+            (source/'skills/kept').mkdir(parents=True)
+            (source/'skills/kept/SKILL.md').write_text('kept')
+            subprocess.run(['git','init','-q',str(source)],check=True)
+            subprocess.run(['git','-C',str(source),'add','.'],check=True)
+            subprocess.run(['git','-C',str(source),'-c','user.name=Fixture',
+                            '-c','user.email=fixture@example.invalid','commit','-qm','init'],check=True)
+            installed = root/'home/.agents/skills/gone'
+            installed.mkdir(parents=True)
+            (installed/'SKILL.md').write_text('local copy')
+            catalog = root/'catalog.json'
+            catalog.write_text(json.dumps({'skills': {
+                'gone': {'sourceUrl': str(source), 'skillPath': 'skills/gone/SKILL.md'},
+                'kept': {'sourceUrl': str(source), 'skillPath': 'skills/kept/SKILL.md'}}}))
+            result = install(['gone','kept'], catalog=catalog, home=root/'home', state=root/'state',
+                             refresh=True, replace_existing=True, skills_dir=root/'home/.agents/skills')
+            self.assertEqual(result, {'gone': 'missing_upstream_preserved', 'kept': 'installed'})
+            self.assertEqual((installed/'SKILL.md').read_text(), 'local copy')
 
     def test_rejects_path_escape(self):
         with tempfile.TemporaryDirectory() as directory:

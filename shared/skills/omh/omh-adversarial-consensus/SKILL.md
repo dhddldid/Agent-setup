@@ -50,7 +50,7 @@ Bad example:
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+8 more`) - clarify, plan, ship, or loop goals.
+- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
 - If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
@@ -58,7 +58,7 @@ Bad example:
 
 Use when a proposal, plan, or direction needs independent perspectives to attack it before a plan is written, and the distilled result is meant as input to planning rather than as the plan.
 
-    Strong routing signals: `adversarial-consensus`, `$adversarial-consensus`, `adversarial planning`, `adversarial plan review`, `red team this plan`, `red-team this plan`, `red team the proposal`, `multi-perspective review`, `multiple perspectives`, `independent perspectives`, `attack this proposal`, `poke holes in this`, `hyperplan`, `敵対的レビュー`, `多角的レビュー`, `レッドチームレビュー`, `この計画に反論`, `穴を探して`, `적대적 검토`, `다관점 검토`, `여러 관점에서 검토`, `레드팀 검토`, `이 계획 반박`, `허점 찾아`, `对抗式评审`, `多视角评审`, `红队评审`, `反驳这个方案`, `找出漏洞`, `kritisi proposal ini dari berbagai sudut pandang`, `cari kelemahan proposal teknis ini`, `uji rencana ini dengan pendekatan red team`, `minta pendapat independen untuk menguji proposal`, `bantu bantah asumsi dalam rancangan ini`, `tinjau proposal secara adversarial`
+    Strong routing signals: `adversarial-consensus`, `$adversarial-consensus`, `adversarial planning`, `adversarial plan review`, `red team this plan`, `red-team this plan`, `red team the proposal`, `multi-perspective review`, `multiple perspectives`, `independent perspectives`, `attack this proposal`, `poke holes in this`, `hyperplan`, `敵対的レビュー`, `多角的レビュー`, `レッドチームレビュー`, `この計画に反論`, `穴を探して`, `적대적 검토`, `다관점 검토`, `여러 관점에서 검토`, `레드팀 검토`, `이 계획 반박`, `허점 찾아`, `адверсариальное ревью`, `жёсткое ревью архитектуры`, `раскритикуй архитектуру`, `найди слабые места в архитектуре`, `对抗式评审`, `多视角评审`, `红队评审`, `反驳这个方案`, `找出漏洞`, `kritisi proposal ini dari berbagai sudut pandang`, `cari kelemahan proposal teknis ini`, `uji rencana ini dengan pendekatan red team`, `minta pendapat independen untuk menguji proposal`, `bantu bantah asumsi dalam rancangan ini`, `tinjau proposal secara adversarial`, `phản biện đề xuất này từ nhiều góc độ`, `tìm điểm yếu của đề xuất kỹ thuật này`, `kiểm tra kiểu red team`, `yêu cầu đánh giá độc lập để kiểm chứng đề xuất`, `giúp bác bỏ các giả định trong thiết kế này`, `rà soát đề xuất theo hướng phản biện`
 
 ## Catalog Metadata
 
@@ -123,7 +123,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

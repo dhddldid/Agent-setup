@@ -60,41 +60,21 @@ def log_candidates(state,now,policy):
     if path.is_file() and not path.is_symlink() and now.timestamp()-path.stat().st_mtime>policy['owned_log_days']*86400:out.append(path)
  return out
 async def maintain(state,vault,apply=False,config=None,gam_state=None):
- import yaml
- from probe_tools import connect,call
- policy=json.loads((ROOT/'config/retention.json').read_text());now=datetime.datetime.now(datetime.timezone.utc)
- state=Path(state);vault=Path(vault).resolve();tools=json.loads((state/'tools.json').read_text());candidates=[]
- from global_memory.config import load_settings,get_platform_paths
- config=Path(config) if config else get_platform_paths().config_file
- if load_settings(config).vault_path.resolve()!=vault:raise RuntimeError('Requested vault does not match GAM configuration')
- stale=[]
- args=['--direct','--token-file',str(get_platform_paths().auth_token),'--config',str(config)]
- if gam_state:args += ['--state',str(gam_state)]
- for path in vault.rglob('*.md'):
-  if path.is_symlink() or not path.resolve().is_relative_to(vault):continue
-  text=path.read_text()
-  if not text.startswith('---\n'):continue
-  try:meta=yaml.safe_load(text.split('---',2)[1])
-  except (yaml.YAMLError,IndexError):continue
-  if isinstance(meta,dict) and expired_memory(meta,now,policy):candidates.append((meta['id'],meta.get('updated_at')))
-  elif isinstance(meta,dict) and stale_memory(meta,now,policy):stale.append(meta.get('id'))
- logs=log_candidates(state,now,policy);result={'apply':apply,'memory_archive_candidates':len(candidates),'memory_review_candidates':stale,'log_candidates':len(logs),'archived':0,'logs_deleted':0}
+ # Shared lifecycle policy and adapter serve every executor. Legacy public
+ # predicates above remain compatibility-only for old callers and tests.
+ shared = ROOT.parent/'shared/skills/core/gam-memory/scripts'
+ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
+ from gam_retention import maintain as maintain_gam
+ policy=json.loads((ROOT/'config/retention.json').read_text())
+ gam_policy=json.loads((ROOT.parent/'shared/retention/policy.json').read_text())['gam']
+ now=datetime.datetime.now(datetime.timezone.utc);state=Path(state)
+ tools=json.loads((state/'tools.json').read_text())
+ result=await maintain_gam(vault,gam_policy,apply=apply,config=config,gam_state=gam_state,command=tools['gam_mcp'],now=now)
+ logs=log_candidates(state,now,policy)
+ result.update(log_candidates=len(logs),logs_deleted=0)
  if apply:
-  async with connect(tools['gam_mcp'],args) as s:
-   for ident,version in candidates:
-    current=await call(s,'memory_get',{'id':ident})
-    def metadata(x):
-     if isinstance(x,dict):
-      if x.get('id')==ident and 'status' in x:return x
-      for v in x.values():
-       m=metadata(v)
-       if m:return m
-    m=metadata(current)
-    if not m or not expired_memory(m,now,policy):continue
-    if datetime.datetime.fromisoformat(str(m.get('updated_at')).replace('Z','+00:00'))!=datetime.datetime.fromisoformat(str(version).replace('Z','+00:00')):continue
-    await call(s,'memory_archive',{'id':ident,'request_id':'setup-expiry-'+ident+'-'+now.date().isoformat(),'reason':'Explicit temporary expiry policy','hard_delete':False});result['archived']+=1
-  for p in logs:
-   if p in log_candidates(state,now,policy):p.unlink();result['logs_deleted']+=1
+  for path in logs:
+   if path in log_candidates(state,now,policy):path.unlink();result['logs_deleted']+=1
   write_json(state/'receipts/maintenance-latest.json',dict(result,at=now.isoformat()))
  return result
 if __name__=='__main__':

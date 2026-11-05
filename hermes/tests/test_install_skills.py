@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch, call
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('installer', ROOT / 'scripts/install_skills.py')
@@ -25,6 +26,58 @@ class InstallTests(unittest.TestCase):
 
     def apply(self, apply=True):
         return installer.install(self.manifest, self.home, self.source, apply)
+
+    def checkout_manifest(self):
+        return {'upstream': {'repo': 'https://github.com/owner/upstream.git'}}
+
+    def test_checkout_preview_resolves_latest_without_writes(self):
+        path = self.base / 'new-checkout'
+        with patch.object(installer, 'latest_release', return_value='v9.8.7') as latest, \
+             patch.object(installer, 'tag_commit', return_value='a' * 40) as commit, \
+             patch.object(installer, 'run') as run:
+            self.assertIsNone(installer.source_checkout(self.checkout_manifest(), path, False))
+        latest.assert_called_once_with('owner/upstream')
+        commit.assert_called_once_with('owner/upstream', 'v9.8.7')
+        run.assert_not_called()
+        self.assertFalse(path.exists())
+
+    def test_checkout_apply_fetches_resolved_stable_tag(self):
+        path = self.base / 'new-checkout'
+        with patch.object(installer, 'latest_release', return_value='v9.8.7'), \
+             patch.object(installer, 'tag_commit', return_value='a' * 40), \
+             patch.object(installer, 'run', return_value='a' * 40) as run:
+            self.assertEqual(installer.source_checkout(self.checkout_manifest(), path, True), path)
+        self.assertIn(call('git', '-C', str(path), 'fetch', '--depth=1',
+                           'https://github.com/owner/upstream.git', 'refs/tags/v9.8.7'), run.call_args_list)
+        self.assertEqual(run.call_args_list[-1], call('git', '-C', str(path), 'checkout', '--detach', 'a' * 40))
+
+    def test_checkout_existing_old_release_preview_needs_source(self):
+        with patch.object(installer, 'latest_release', return_value='v9.8.7'), \
+             patch.object(installer, 'tag_commit', return_value='a' * 40), \
+             patch.object(installer, 'run', return_value='b' * 40):
+            self.assertIsNone(installer.source_checkout(self.checkout_manifest(), self.source, False))
+
+    def test_checkout_existing_current_release_is_reused(self):
+        with patch.object(installer, 'latest_release', return_value='v9.8.7'), \
+             patch.object(installer, 'tag_commit', return_value='a' * 40), \
+             patch.object(installer, 'run', return_value='a' * 40) as run:
+            self.assertEqual(installer.source_checkout(self.checkout_manifest(), self.source, True), self.source)
+        self.assertFalse(any('fetch' in args.args for args in run.call_args_list))
+
+    def test_checkout_no_release_fails_before_write(self):
+        with patch.object(installer, 'latest_release', return_value=None), \
+             patch.object(installer, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'No stable'):
+                installer.source_checkout(self.checkout_manifest(), self.base / 'new', True)
+        run.assert_not_called()
+
+    def test_checkout_changed_release_fails_before_checkout(self):
+        with patch.object(installer, 'latest_release', return_value='v9.8.7'), \
+             patch.object(installer, 'tag_commit', return_value='a' * 40), \
+             patch.object(installer, 'run', return_value='b' * 40) as run:
+            with self.assertRaisesRegex(ValueError, 'changed during resolution'):
+                installer.source_checkout(self.checkout_manifest(), self.base / 'new', True)
+        self.assertFalse(any('checkout' in args.args for args in run.call_args_list))
 
     def test_preview_does_not_write(self):
         self.assertEqual(self.apply(False)[0]['status'], 'add')

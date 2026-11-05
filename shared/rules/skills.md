@@ -1,6 +1,6 @@
 ## 작업 흐름과 스킬
 
-- 일반 답변·작은 수정은 바로 처리한다. 복합 작업은 coding-plan으로 요구사항과 검증 방법을 연결하고, 분담은 coding-work와 coding-handoff, 리뷰는 coding-code-review, 완료 판단은 coding-verification을 사용한다.
+- 일반 답변·작은 수정은 바로 처리한다. 복합 작업의 전체 흐름은 아래 `OMH workflow skills` 절에 따라 OMH 워크플로(ulw-work·ulw-loop·ulw-plan·omh-code-review·omh-verification-gate)로 고른다. coding-plan(요구사항과 검증 방법 연결), coding-work·coding-handoff(분담), coding-code-review(리뷰), coding-verification(완료 판단)은 그 흐름의 각 단계 안에서 기준으로 함께 적용한다.
 - 위치·관계 파악은 codegraph-context, 원인 불명 실패는 diagnosing-bugs, 중요한 로직은 tdd, 구현 단순화는 ponytail, 반복 실패와 중단 작업 재개는 coding-repair를 사용한다.
 - 실패 처리 감사는 coding-failure-audit, 설계 반례는 coding-design-review, 제품 문구는 coding-ai-slop-review, 기술부채는 coding-debt-audit를 사용한다.
 - 화면 작업은 OMH frontend·visual-qa 기준을 Claude Code·Codex에 맞춘 product-design-review로 구현·검증한다. 사용자가 레퍼런스 선택을 요청하거나 에이전트의 제안에 동의하면 실제 사례 최소 5개를 추천하고 사용자가 고른 방향을 구현한다. 그 외에는 제품 목적·기존 브랜드·현재 디자인 기준으로 진행한다.

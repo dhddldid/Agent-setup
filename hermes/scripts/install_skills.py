@@ -7,6 +7,11 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
+import sys
+
+# Support direct execution from the Hermes executor directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.latest_release import latest_release, tag_commit
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,17 +33,26 @@ def run(*args):
 
 
 def source_checkout(manifest, path, apply):
+    repo_url = manifest['upstream']['repo']
+    repo = repo_url.rstrip('/').removesuffix('.git').split('github.com/')[1]
+    tag = latest_release(repo)
+    if not tag:
+        raise ValueError('No stable upstream release: ' + repo)
+    commit = tag_commit(repo, tag)
+    if path.exists():
+        run('git', '-C', str(path), 'diff', '--exit-code', 'HEAD', '--', 'skills', 'optional-skills', 'LICENSE')
+        if run('git', '-C', str(path), 'rev-parse', 'HEAD') == commit:
+            return path
+    if not apply:
+        return None
     if not path.exists():
-        if not apply:
-            return None
         path.parent.mkdir(parents=True, exist_ok=True)
         run('git', 'init', str(path))
-        run('git', '-C', str(path), 'remote', 'add', 'origin', manifest['upstream']['repo'])
-        run('git', '-C', str(path), 'fetch', '--depth=1', 'origin', manifest['upstream']['commit'])
-        run('git', '-C', str(path), 'checkout', '--detach', 'FETCH_HEAD')
-    if run('git', '-C', str(path), 'rev-parse', 'HEAD') != manifest['upstream']['commit']:
-        raise ValueError('Upstream checkout does not match manifest commit')
-    run('git', '-C', str(path), 'diff', '--exit-code', 'HEAD', '--', 'skills', 'optional-skills', 'LICENSE')
+        run('git', '-C', str(path), 'remote', 'add', 'origin', repo_url)
+    run('git', '-C', str(path), 'fetch', '--depth=1', repo_url, 'refs/tags/' + tag)
+    if run('git', '-C', str(path), 'rev-parse', 'FETCH_HEAD^{commit}') != commit:
+        raise ValueError('Upstream release changed during resolution')
+    run('git', '-C', str(path), 'checkout', '--detach', commit)
     return path
 
 

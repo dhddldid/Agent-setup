@@ -124,7 +124,7 @@ Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각�
 | 항목 | Claude Code | Codex | Hermes |
 |---|---|---|---|
 | 모델 라우팅 | 12개 분류별 Claude 하위 에이전트 + GPT는 Codex 플러그인 | 12개 분류별 GPT 모델·추론 | OMH 프리셋 |
-| 스킬 | 233개 (공통 49 + OMH 144 + codex + 외부 39) | 232개 (공통 49 + OMH 144 + 외부 39) | 130개 (공식 57 + 공통 34 + 외부 39) + OMH 144 |
+| 스킬 | 242개 (공통 49 + OMH 153 + codex + 외부 39) | 241개 (공통 49 + OMH 153 + 외부 39) | 130개 (공식 57 + 공통 34 + 외부 39) + OMH 153 |
 | 전역 지침 | `~/.claude/AGENTS.md` | `~/.codex/AGENTS.md` | `SOUL.md` 관리 구간 |
 | 코드 탐색 | CodeGraph | CodeGraph | CodeGraph |
 | 기억 | GAM | GAM | GAM + Hermes 메모리 |
@@ -140,12 +140,12 @@ Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각�
 | 작업 원칙 | 16 | coding-plan·coding-work·coding-handoff·coding-status·coding-research·coding-repair·coding-code-review·coding-verification·coding-design-review·coding-failure-audit·coding-debt-audit·coding-ai-slop-review·diagnosing-bugs·tdd·ponytail·product-design-review | ✅ | ✅ | OMH가 같은 일 |
 | 도구·글쓰기·디자인 | 11 | codegraph-context·gam-memory·coding-maintenance·agent-setup-maintenance·aside-browser·humanize-korean·humanizer·writing-for-agents·shadcn·shadcn-lint·logo-design | ✅ | ✅ | ✅ (writing-for-agents 제외) |
 | Hermes 작업 교훈 | 22 | 운영 실패 진단·관리 API 일괄 작업·서비스 인프라 설계·읽기 모델 성능·SQLite 시험 기록·서브프로세스 기한·미디어 제작·모바일 앱 베타·Android 기기 검증·참고 링크 도입 검토 등 | ✅ | ✅ | ✅ |
-| OMH 워크플로 | 144 | 계획(planner 19)·검토(reviewer 23)·운영(operator 38)·안내(guide 21)·추적(tracker 18)·ultrawork 9·조사(researcher 8)·기억(memory-keeper 5)·인계(handoff-guide 3) | ✅ 사본 | ✅ 사본 | ✅ OMH 설치기 |
+| OMH 워크플로 | 153 | 계획(planner 19)·검토(reviewer 23)·운영(operator 44)·안내(guide 21)·추적(tracker 18)·ultrawork 10·조사(researcher 10)·기억(memory-keeper 5)·인계(handoff-guide 3) | ✅ 사본 (OMH 4.0.6) | ✅ 사본 (OMH 4.0.6) | ✅ OMH 설치기 |
 | 외부 업무 | 39 | Azure·Entra 26, Azure 비용 4, 마케팅 5 (seo-audit·aso·analytics·cro·copywriting), 모션 디자인 2 (motion-design·hyperframes-animation), archify, iterative-retrieval | ✅ | ✅ | ✅ |
 | Hermes 공식 | 57 | Hermes 내장 도구용 스킬 (메일·문서·미디어·연구 등) | — | — | ✅ |
 | 실행기 전용 | 1 | codex: GPT 항목을 Codex 플러그인으로 넘기고 결과 회수 | ✅ | — | — |
 
-Claude Code·Codex의 전역 지침은 OMH 스킬이 쓰는 Hermes 도구 이름(`omh_todo`, `omh_memory`, `delegate_task` 등)을 각 실행기의 할 일 목록·GAM·위임으로 대응시킨다.
+Claude Code·Codex의 전역 지침(`OMH workflow skills` 절)은 작업 형태로 OMH 흐름을 먼저 고르게 한다. 여러 부분·선후관계·병렬 작업과 확정 계획 구현은 `ulw-work`(Hermes의 `dag-ulw`에 해당), 반복 목표는 `ulw-loop`, 위험하거나 미정인 계획은 `ulw-plan`·`omh-plan`, 검토는 `omh-code-review`, 작은 수정·일반 답변은 바로 처리하고, 완료 판정은 `omh-verification-gate`로 한다. 개인·프로젝트 스킬은 고른 흐름 안에서 쓴다. 같은 절이 OMH 스킬이 쓰는 Hermes 도구 이름(`omh_todo`, `omh_memory`, `delegate_task` 등)을 각 실행기의 할 일 목록·GAM·위임으로 대응시킨다. OMH 사본 버전은 [`shared/skills/omh/SOURCE.json`](shared/skills/omh/SOURCE.json)에 있다.
 
 ## Hermes에서 Agent-setup과 OMH가 함께 동작하는 방식
 
@@ -153,14 +153,22 @@ Hermes에는 Agent-setup이 설치한 구성과 OMH가 설치한 구성이 함�
 
 | 영역 | Agent-setup에만 | OMH에만 | 둘 다 있을 때 |
 |---|---|---|---|
-| 스킬 | 공식 57·공통·외부 스킬, 작업 중 만든 스킬 (`~/.hermes/skills`) | 워크플로 144개 (`~/.local/share/omh/current/skills`) | 같은 이름이면 `프로젝트 → ~/.hermes/skills → 외부 폴더(OMH)` 순서로 Agent-setup 쪽을 쓴다. 역할만 겹치면 요청에 맞는 쪽을 고른다 |
+| 스킬 | 공식 57·공통·외부 스킬, 작업 중 만든 스킬 (`~/.hermes/skills`) | 워크플로 153개 (`~/.local/share/omh/current/skills`) | 같은 이름이면 `프로젝트 → ~/.hermes/skills → 외부 폴더(OMH)` 순서로 Agent-setup 쪽을 쓴다. 역할만 겹치면 요청에 맞는 쪽을 고른다 |
 | 지침 | `SOUL.md`의 공통 원칙·OMH 워크플로 사용(작업 형태로 OMH 흐름을 먼저 고르고 사용자 스킬은 그 안에서 사용, 위임 전 OMH 라우팅)·Aside·문서 전달 | 매 턴 분류 힌트, 프로젝트 `AGENTS.md`의 OMH 구간 | 사용자 지시 → 프로젝트 `AGENTS.md` → 전역 지침 순서. 말투·언어는 `SOUL.md` |
 | 모델 라우팅 | 설치 프리셋, 메인 대화 기본 모델 | 분류별 기본 체인, 실행값 `~/.omh/routing/model-chains.json` | 프리셋을 넣은 분류는 `override`로 OMH 기본값보다 우선하고 업데이트 뒤에도 유지된다. 하위 에이전트에만 적용되고 메인 대화·cron은 Hermes 기본 모델 |
 | 기억 | GAM: 프로젝트 결정·해결 경험 | OMH 기억: Hermes 작업 교훈 | 프로젝트 지식은 GAM에 두어 세 AI가 함께 쓴다 |
 | 코드 탐색·브라우저 | CodeGraph, Aside 조작 규칙 | 색인 갱신·브라우저 범위 안내 워크플로 | 실제 도구는 CodeGraph·Aside, 범위 확인은 OMH 안내를 함께 따른다 |
 | 플러그인·본체 | 사용량 표시·웹 검색 중계, Discord 보고(Discord를 쓰는 사용자만 선택 설치), Hermes 본체·provider-usage 수정 묶음(`hermes/patches/`: 계정 선택·사용량 표시·모델별 계정 쿨다운 등), fallback 호환 패치 | `omh` 플러그인 | 이름이 달라 함께 등록된다. Hermes 본체와 provider-usage는 최신 정식 릴리스 위에 수정 묶음을 적용해 쓰고, `hermes/scripts/apply_local_patches.py`로 적용 상태를 확인한다 |
-| 프로젝트 식별 | 없음 | Git 원격 주소로 프로젝트 자동 식별 | 프로젝트마다 할 초기화는 없다. `omh memory project-identity show`가 `unresolved`인 프로젝트만 `omh memory project-identity init`을 실행한다. OMH 4.0.0에는 `omh init` 명령이 없다 |
-| 업데이트 | `hermes/scripts/update.sh` 한 줄 명령, 외부 구성요소 고정값 확인(`scripts/check_releases.py`) | `omh update`가 자기 패키지·스킬 갱신 | [한 줄 명령](#hermesomh-업데이트)으로 함께 올리고 사용자 지정을 다시 맞춘다 |
+| 프로젝트 식별 | 없음 | Git 원격 주소로 프로젝트 자동 식별 | 프로젝트마다 할 초기화는 없다. `omh memory project-identity show`가 `unresolved`인 프로젝트만 `omh memory project-identity init`을 실행한다 |
+| 업데이트 | `hermes/scripts/update.sh` 한 줄 명령(Hermes·OMH·provider-usage·외부 스킬을 실행 시점의 최신 정식 릴리스로), 설치본 대 최신 정식판 점검(`scripts/check_releases.py`) | `omh update`가 자기 패키지·스킬 갱신 | [한 줄 명령](#hermesomh-업데이트)으로 함께 올리고 사용자 지정을 다시 맞춘다 |
+
+## 버전 기준
+
+저장소에는 외부 구성요소(Hermes, OMH, provider-usage 플러그인, CodeGraph, GAM, 외부 스킬)의 원본 주소와 설치 방법만 둔다. 설치기와 업데이트 명령은 실행될 때마다 각 원본의 GitHub `releases/latest`에서 최신 정식 릴리스를 조회해 그 태그로 설치한다. 정식 릴리스만 기준으로 삼고, 정식 릴리스를 내지 않는 원본(현재 MicrosoftDocs/Agent-Skills)만 기본 브랜치를 받는다. 조회한 태그·커밋은 각 컴퓨터의 설치 기록에 남는다.
+
+이 사용자의 수정 묶음만 태그별 파일로 둔다. Hermes 본체는 `hermes/patches/hermes-agent/<태그>.patch`, provider-usage는 `hermes/patches/provider-usage/<태그>.patch`다. 최신 태그용 패치가 없으면 업데이트 명령은 아무것도 바꾸기 전에 멈추고, AI에게 수정 묶음을 새 태그로 옮겨 달라고 요청하라고 안내한다. 옮긴 패치를 저장한 뒤 같은 명령을 다시 실행한다.
+
+`python3 scripts/check_releases.py`는 이 컴퓨터의 설치본(Hermes, OMH, provider-usage, 저장소 OMH 사본, Claude Code·Codex에 설치된 OMH 스킬)을 최신 정식 릴리스와 비교하고, 최신 Hermes·provider-usage 태그용 패치가 있는지 보여준다. 저장소 목록에 버전 고정 필드가 생기거나 릴리스 조회가 실패하면 종료 코드 1로 끝난다.
 
 ## Hermes·OMH 업데이트
 
@@ -170,13 +178,26 @@ Hermes와 OMH를 최신 정식 릴리스로 올리고 이 사용자의 수정 �
 bash hermes/scripts/update.sh
 ```
 
-- 실행 시점의 최신 정식 버전을 GitHub에서 읽어 Hermes(`hermes update --backup --yes`)와 OMH(`omh update --channel stable --version <최신>`)를 함께 올린다. 버전을 직접 적을 필요가 없다.
+- 실행 시점의 최신 정식 버전을 GitHub에서 읽어 Hermes(`hermes update --backup --yes`)와 OMH(`omh update --channel stable --version <최신>`)를 함께 올린다. provider-usage 플러그인도 최신 정식 태그로 올리고, 외부 스킬은 최신 정식판으로 갱신한 뒤 설명 조정을 다시 적용한다. 버전을 직접 적을 필요가 없다.
 - 업데이트 전후로 모델 체인·Hermes 설정·SOUL 관리 구간·사용자 스킬·한국어 트리거 팩·패치 상태를 비교해 표로 보여주고, Hermes 수정 묶음·호환 패치·SOUL 구간·트리거 팩·provider-usage 표시를 다시 맞춘 뒤 점검과 게이트웨이 재시작까지 한다.
-- 새 Hermes 태그용 수정 묶음이 `hermes/patches/hermes-agent/`에 없으면 아무것도 바꾸기 전에 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 Hermes <태그>에 옮겨줘"라고 요청한 뒤 같은 명령을 다시 실행한다.
+- 새 Hermes 태그용 수정 묶음이 `hermes/patches/hermes-agent/`에, 새 provider-usage 태그용 수정 묶음이 `hermes/patches/provider-usage/`에 없으면 아무것도 바꾸기 전에 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 <대상> <태그>에 옮겨줘"라고 요청한 뒤 같은 명령을 다시 실행한다.
 - `--dry-run`은 실행할 단계와 확인한 값만, `--check`는 버전과 사용자 지정 상태만 보여준다.
 - Hermes Desktop의 업데이트 버튼은 Hermes 본체의 로컬 수정을 다시 적용하지 않으므로 쓰지 않는다.
 
 단계별 동작과 멈추는 조건은 [업데이트](hermes/docs/model-routing.md#업데이트), 항목별 유지 방식은 [사용자 지정 항목과 업데이트](hermes/docs/omh-and-agent-setup.md#사용자-지정-항목과-업데이트)에 있다.
+
+## Claude Code·Codex 업데이트
+
+Claude Code·Codex의 OMH 스킬 사본, 전역 지침, 공통 스킬, 외부 스킬을 최신으로 맞추는 명령도 한 줄이다. Agent-setup 루트에서 실행한다.
+
+```bash
+bash scripts/update_claude_codex.sh
+```
+
+- OMH 최신 정식 태그를 조회하고, 저장소 사본(`shared/skills/omh/`)과 버전이 다르면 공식 태그 원본에서 다시 가져온다.
+- CLI와 설정 폴더가 모두 있는 실행기에만 적용한다. Claude Code는 기록된 프리셋으로 설치기를 다시 실행하고, Codex는 관리 지침과 공통 스킬 설치기를 실행한다. 외부 스킬은 실행기별 스킬 폴더에서 최신 정식판으로 갱신하고 설명 조정을 다시 적용한다.
+- 전후 OMH 사본 버전, 실행기별 스킬 수, 전역 지침 SHA256을 표로 보여준다. 사용자가 고친 설치본은 보존하고 충돌로 보고하며, 이때 명령은 실패 종료 코드로 끝난다.
+- `--dry-run`은 실행할 명령과 현재 값만, `--check`는 현재 상태만 보여준다.
 
 ## 저장 데이터 보존
 

@@ -1,6 +1,6 @@
 # 스킬·도구 전체 목록
 
-MacBook 설정에서 아래 스킬 66개를 **모두 설치**한다. 표의 구분은 설치 여부가 아니라 사용 시점을 나타낸다. 관련 작업에서만 스킬 본문을 읽고, 설치·앱 발견·실제 행동은 따로 확인한다. `~`는 설정할 컴퓨터의 사용자 홈이다. 표의 도구 버전은 고정 요구사항이 아니며, 설정 시점의 최신 호환 안정판을 확인한다.
+MacBook 설정에서 아래 스킬 66개를 **모두 설치**한다. 표의 구분은 설치 여부가 아니라 사용 시점을 나타낸다. 관련 작업에서만 스킬 본문을 읽고, 설치·앱 발견·실제 행동은 따로 확인한다. `~`는 설정할 컴퓨터의 사용자 홈이다. 도구와 외부 스킬은 설치할 때 원본의 최신 정식 릴리스를 조회해 설치한다.
 
 | 구분 | 항목 | 사용하는 때·역할 | 실제 설치 위치 | 설치 방식·연결 |
 |---|---|---|---|---|
@@ -63,7 +63,7 @@ MacBook 설정에서 아래 스킬 66개를 **모두 설치**한다. 표의 구�
 | 핵심 | `shadcn` | shadcn/ui 컴포넌트 추가·검색·구성·스타일 | `~/.agents/skills/shadcn/SKILL.md` | Agent-setup `shared/skills/core/shadcn` 복사 ([shadcn-ui/ui](https://github.com/shadcn-ui/ui) 공식 스킬 원본) |
 | 핵심 | `shadcn-lint` | @shadcn/lint 설치·등록·규칙 안내 | `~/.agents/skills/shadcn-lint/SKILL.md` | Agent-setup `shared/skills/core/shadcn-lint` 복사 ([shadcn-ui/lint](https://github.com/shadcn-ui/lint) SETUP.md 기반) |
 | 핵심 | `logo-design` | 로고·브랜드 마크 브리프·컨셉·SVG 제작·16px 시험·전달 파일 | `~/.agents/skills/logo-design/SKILL.md` | Agent-setup `shared/skills/core/logo-design` 복사 ([kaankiziltug/logo-design-skill](https://github.com/kaankiziltug/logo-design-skill) @ 0ecf52e, 상표 로고 SVG 묶음 제외) |
-| 핵심 | Hermes 작업 교훈 22개·OMH 144개 | 운영 진단·인프라 설계·미디어·검증 교훈과 OMH 계획·검토·운영 워크플로 | `~/.agents/skills/<이름>/SKILL.md` | Agent-setup `shared/skills/core`·`shared/skills/omh` 복사; 목록은 [스킬 표](../docs/skills.md) |
+| 핵심 | Hermes 작업 교훈 22개·OMH 153개 | 운영 진단·인프라 설계·미디어·검증 교훈과 OMH 계획·검토·운영 워크플로 | `~/.agents/skills/<이름>/SKILL.md` | Agent-setup `shared/skills/core`·`shared/skills/omh`(OMH 최신 정식판 사본, 버전은 `SOURCE.json`) 복사; 목록은 [스킬 표](../docs/skills.md) |
 | 업무 | `iterative-retrieval` | 이미 배정한 하위 작업의 부족한 맥락 보완 | `~/.agents/skills/iterative-retrieval/SKILL.md` | [ECC](https://github.com/affaan-m/ECC) 원본 복사 |
 | 업무 | `cost-analysis` | 실제 Azure 비용·청구 변화 분석 | `~/.agents/skills/cost-analysis/SKILL.md` | Microsoft 원본 복사 |
 | 업무 | `cost-estimation` | 계획 중인 Azure 사용료 추정 | `~/.agents/skills/cost-estimation/SKILL.md` | Microsoft 원본 복사 |
@@ -71,15 +71,15 @@ MacBook 설정에서 아래 스킬 66개를 **모두 설치**한다. 표의 구�
 | 업무 | `cost-optimization` | 실행 중인 Azure 리소스 비용 최적화 | `~/.agents/skills/cost-optimization/SKILL.md` | Microsoft 원본 복사 |
 | 업무 | `motion-design` | 모션 그래픽·홍보 영상·쇼츠·키네틱 타이포의 연출 설계와 개선 | `~/.agents/skills/motion-design/SKILL.md` | [Open Design](https://github.com/nexu-io/open-design) 원본 복사 |
 | 업무 | `hyperframes-animation` | HyperFrames 애니메이션 규칙·장면 청사진·전환·런타임 어댑터 | `~/.agents/skills/hyperframes-animation/SKILL.md` | [HyperFrames](https://github.com/heygen-com/hyperframes) 원본 복사 |
-| 도구 | GAM 최신 안정판 | 결정 검색·검토·승인 저장; 키워드·의미 검색 | `$(uv tool dir)/global-memory-mcp/`; 실행 파일은 `$(uv tool dir --bin)/global-memory-mcp` | [공식 GAM](https://github.com/ozankasikci/global-agent-memory/releases)에서 `uv tool install`; Codex MCP 연결 |
-| 도구 | CodeGraph 최신 호환 안정판 | Git 저장소별 구조·호출·변경 영향 탐색 | `~/Library/Application Support/codex-setup/tools/codegraph/node_modules/.bin/codegraph` | [공식 CodeGraph](https://github.com/colbymchenry/codegraph/releases) npm 잠금 설치; Codex MCP 연결 |
+| 도구 | GAM 최신 정식 릴리스 | 결정 검색·검토·승인 저장; 키워드·의미 검색 | `$(uv tool dir)/global-memory-mcp/`; 실행 파일은 `$(uv tool dir --bin)/global-memory-mcp` | [공식 GAM](https://github.com/ozankasikci/global-agent-memory/releases)의 최신 정식 태그 커밋을 `uv tool install`로 설치; Codex MCP 연결 |
+| 도구 | CodeGraph 최신 정식 릴리스 | Git 저장소별 구조·호출·변경 영향 탐색 | `~/Library/Application Support/codex-setup/tools/codegraph/node_modules/.bin/codegraph` | [공식 CodeGraph](https://github.com/colbymchenry/codegraph/releases) 최신 정식 태그의 npm 패키지 설치(결정한 태그·커밋은 `tool-releases.json`에 기록); Codex MCP 연결 |
 | 도구 | Ollama 최신 안정판 + `nomic-embed-text` | GAM 기억·질문의 벡터 생성 | `$(brew --prefix)/bin/ollama`, `~/.ollama/models/` | [공식 Ollama](https://github.com/ollama/ollama/releases) 안정판을 Homebrew로 설치·서비스 시작·모델 다운로드 |
 | 설치 기반 | uv 최신 안정판 | GAM의 공식 도구 설치·업데이트 | `$(brew --prefix)/bin/uv`; GAM 위치는 `uv tool dir`로 조회 | [공식 uv](https://github.com/astral-sh/uv/releases) 확인 후 Homebrew 설치·갱신 |
 | 설치 기반 | Node.js 최신 호환 LTS + npm | CodeGraph 설치·실행 | `$(brew --prefix node@24)/bin/node`, `$(brew --prefix node@24)/bin/npm` (현재 호환판 예시) | [Node.js LTS](https://nodejs.org/en/about/previous-releases) 확인 후 Homebrew 설치·갱신 |
 | 설치 기반 | Python 최신 호환 안정판·Homebrew | 설정 절차 실행·uv/Node/Ollama 준비 | `$(command -v python3)`, `$(command -v brew)` | [Homebrew 공식 설치 안내](https://brew.sh/)를 확인하고 AI가 누락 항목을 준비 |
 | 앱 기능 | Codex 파일·명령·브라우저·컴퓨터·위임 | 작업 종류에 따라 앱에서 선택 | ChatGPT/Codex 앱 내부 | 앱 제공 기능; 별도 CLI 설치 대상 아님 |
 
-핵심 스킬 27개는 Agent-setup `shared/skills/core/`(Claude Code·Codex 공통)에서 사용자 `~/.agents/skills/`에 독립 복사한다. 앱 설치·브라우저 프로필 가져오기 스킬(desktop-app-provisioning)은 `shared/skills/packs/mac/`의 선택 묶음이다. 기존에 설치된 저장소 링크도 백업 후 복사본으로 전환한다. 외부 스킬은 [설치 목록](inventories/external-skills.json)의 각 항목이 적은 원본 저장소의 최신 정식 릴리스 태그(`releaseTag`)와 그 태그의 전체 커밋(`ref`)에서 가져온다. 설치기는 새 설치와 `--refresh` 때 `ref` 커밋을 받는다. 원본은 Git LFS 필터를 끈 상태로 받으므로 LFS로 관리하는 미디어는 포인터 파일로 남고, git-lfs가 없는 컴퓨터에서도 설치된다. 정식 릴리스를 내지 않는 원본(현재 MicrosoftDocs/Agent-Skills)은 `releaseTag`를 `null`로 두고 기본 브랜치를 받는다. 새 정식 릴리스가 나오면 루트 `scripts/check_releases.py`가 원본 저장소별로 `behind`를 표시하고, 그 저장소 항목 전체의 `releaseTag`·`ref`를 함께 올린다. 실제 출처·커밋·해시는 `~/Library/Application Support/codex-setup/external-skills.lock.json`에 기록한다. 이미 설치된 외부 스킬은 `scripts/install_external_skills.py --all --apply --refresh`로 대조한다. 기본 갱신은 설치 당시 원본과 전체 폴더가 일치할 때만 교체한다. 사용자가 기존 스킬까지 최신화를 요청한 경우 AI가 변경 대상과 원본을 검토한 뒤 `--replace-existing`을 추가해 각 폴더를 백업·교체·검증한다. 관련 작업에서만 필요한 스킬을 선택한다.
+핵심 스킬 27개는 Agent-setup `shared/skills/core/`(Claude Code·Codex 공통)에서 사용자 `~/.agents/skills/`에 독립 복사한다. 앱 설치·브라우저 프로필 가져오기 스킬(desktop-app-provisioning)은 `shared/skills/packs/mac/`의 선택 묶음이다. 기존에 설치된 저장소 링크도 백업 후 복사본으로 전환한다. 외부 스킬은 [설치 목록](inventories/external-skills.json)의 각 항목이 적은 원본 저장소·스킬 경로를 따른다. 설치기는 새 설치와 `--refresh` 때 원본별 최신 정식 릴리스 태그와 그 커밋을 조회해 받는다. 원본은 Git LFS 필터를 끈 상태로 받으므로 LFS로 관리하는 미디어는 포인터 파일로 남고, git-lfs가 없는 컴퓨터에서도 설치된다. 정식 릴리스를 내지 않는 원본(현재 MicrosoftDocs/Agent-Skills)은 기본 브랜치의 최신 커밋을 받는다. 미리보기(`--apply` 생략)는 스킬마다 조회한 태그·커밋을 보여준다. 실제 출처·태그·커밋·해시는 `~/Library/Application Support/codex-setup/`의 설치 기록에 대상 스킬 폴더별로 남는다. 이미 설치된 외부 스킬은 `scripts/install_external_skills.py --all --apply --refresh`로 대조한다. 기본 갱신은 설치 당시 원본과 전체 폴더가 일치할 때만 교체한다. 사용자가 기존 스킬까지 최신화를 요청한 경우 AI가 변경 대상과 원본을 검토한 뒤 `--replace-existing`을 추가해 각 폴더를 백업·교체·검증한다. 관련 작업에서만 필요한 스킬을 선택한다.
 
 **GAM·Ollama:** GAM 설치·업데이트 자체는 Ollama를 설치하지 않는다. 이 저장소의 설정 절차가 Ollama와 `nomic-embed-text`를 준비하고 벡터 응답을 확인한다. 기억은 `~/Documents/Global Agent Memory/`에, 설정·검색 DB는 `~/Library/Application Support/global-memory/`에 둔다. 기억은 자동으로 무조건 저장하지 않고 후보 검토와 승인 범위를 따른다.
 

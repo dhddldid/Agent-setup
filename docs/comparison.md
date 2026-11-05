@@ -5,16 +5,17 @@
 | 영역 | Codex | Claude Code | Hermes |
 |---|---|---|---|
 | 형태 | 사용자 홈 전역 설치기 | `~/.claude` 전역 설치기 | 선택한 Hermes 프로필 설치기 |
-| OMH | 12개 분류·작업 원칙을 Codex용으로 재작성 (OMH v4.0.0, 36e96fe) | Claude Code 전용 12개 분류 순서·추론을 사용 | OMH v4.0.0 설치·연결 (manifest 참조 36e96fe) |
+| OMH | 12개 분류·작업 원칙을 Codex용으로 재작성 (분류 출처 OMH v4.0.0 README), OMH 최신 정식판 스킬 사본과 작업 형태별 흐름 규칙 | Claude Code 전용 12개 분류 순서·추론, OMH 최신 정식판 스킬 사본과 작업 형태별 흐름 규칙 | 실행 시점의 OMH 최신 정식 릴리스 설치·연결 |
 | 라우팅 원본 | codex/11-working-method.md, codex/config/models.json | claude/routes/claude-code.json (실행기별 정책을 시험으로 대조) | hermes/routing-presets/*.json |
 | 위임 | Codex 네이티브 위임의 model·reasoning_effort (GPT 모델) | Claude 모델은 route-<분류>-<계열> 에이전트, GPT 모델은 Codex 플러그인 codex:codex-rescue | OMH 라우팅 + delegate_task |
 | fallback | 지정 조합을 쓸 수 없으면 제약 보고 | 전역 규칙에 따라 주 에이전트가 다음 항목으로 넘김 | 분류별 후보·전역·자식 공통 fallback + 소스 호환 패치 |
-| 스킬 | 232개 (공통 49 + OMH 144 + 외부 39), ~/.agents/skills/ | 233개 (공통 49 + OMH 144 + codex + 외부 39), ~/.claude/skills/ | 130개 (공식 57 + 공통 34 + 외부 39) + OMH, $HERMES_HOME/skills/ |
+| 스킬 | 241개 (공통 49 + OMH 153 + 외부 39), ~/.agents/skills/ | 242개 (공통 49 + OMH 153 + codex + 외부 39), ~/.claude/skills/ | 130개 (공식 57 + 공통 34 + 외부 39) + OMH, $HERMES_HOME/skills/ |
 | 기억·코드 탐색 | GAM·CodeGraph MCP, Ollama 임베딩 | GAM·CodeGraph MCP | GAM·CodeGraph MCP + Hermes 메모리 |
 | 전역 지침 | $CODEX_HOME/AGENTS.md·working-method.md·models.json | ~/.claude/AGENTS.md 관리 구간(+ CLAUDE.md의 `@AGENTS.md`), ~/.claude/agent-setup/routing.json | $HERMES_HOME/SOUL.md 관리 구간 |
 | 브라우저 | Aside repl 직접 조작 규칙 | Aside repl 직접 조작 규칙 | Aside repl 직접 조작 규칙 |
 | Hermes 전용 | — | — | Desktop UI 크기, GPT·Claude 사용량 표시, 문서 폴더 카드, fallback 소스 패치 |
 | 설치·복구 | 영수증·백업·재개·복구 | 미리보기·반복 적용·충돌 중단·백업 | 미리보기·반복 적용·충돌 중단 |
+| 업데이트 | `bash scripts/update_claude_codex.sh` (Claude Code와 함께) | `bash scripts/update_claude_codex.sh` (Codex와 함께) | `bash hermes/scripts/update.sh` |
 | 로컬 시험 | 설치기 단위시험 | 라우팅 에이전트 정합성 + 설치기 단위시험 | 설치 문서 검사 + 설치기 단위시험 |
 
 ## 모델

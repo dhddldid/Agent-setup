@@ -24,9 +24,11 @@ HELPERS="$SCRIPT_DIR/update_helpers.py"
 HERMES_HOME=${HERMES_HOME:-$HOME/.hermes}
 OMH_HOME=${OMH_HOME:-$HOME/.omh}
 OMH_REPO=${OMH_REPO:-rlaope/oh-my-hermes}
+PROVIDER_REPO=PhoeniXAbhisheK/hermes-plugin-provider-usage
+PROVIDER_CHECKOUT="$HERMES_HOME/plugins/provider-usage"
 WORK="${TMPDIR:-/tmp}"
 WORK="${WORK%/}/agent-setup-update-$(date +%Y%m%d-%H%M%S)"
-TOTAL=15
+TOTAL=17
 STEP=0
 STOP_NOTE=''
 DOCTOR_FAILED=''
@@ -119,6 +121,9 @@ HERMES_REPO=$(git -C "$HERMES_CHECKOUT" remote get-url origin 2>/dev/null \
 [[ $HERMES_REPO == */* ]] || HERMES_REPO=NousResearch/hermes-agent
 HERMES_LATEST=$(latest_stable "$HERMES_REPO")
 OMH_LATEST=$(latest_stable "$OMH_REPO")
+PROVIDER_LATEST=$(latest_stable "$PROVIDER_REPO")
+PROVIDER_INSTALLED=$("$PY" "$HELPERS" plugin-tag --checkout "$PROVIDER_CHECKOUT")
+info "provider-usage: ${PROVIDER_INSTALLED:-태그 없음} → v$PROVIDER_LATEST ($PROVIDER_REPO)"
 info "Hermes: 설치 v$HERMES_INSTALLED → 최신 정식 v$HERMES_LATEST ($HERMES_REPO)"
 info "OMH: 설치 $OMH_CHANNEL $OMH_INSTALLED → 최신 정식 $OMH_LATEST ($OMH_REPO)"
 HERMES_CHECK=$(hermes update --check 2>&1 || true)
@@ -130,6 +135,11 @@ if [[ $HERMES_INSTALLED != "$HERMES_LATEST" ]] \
   && ! "$PY" "$HELPERS" patch-exists --target hermes-agent --tag "v$HERMES_LATEST"; then
   stop_or_note "Agent-setup에 Hermes v${HERMES_LATEST}용 수정 묶음(hermes/patches/hermes-agent/v$HERMES_LATEST.patch)이 없습니다. 아무것도 바꾸지 않았습니다. AI에게 \"Agent-setup 수정 묶음을 Hermes v${HERMES_LATEST}에 옮겨줘\"라고 요청한 뒤 다시 실행하세요."
 fi
+
+if ! "$PY" "$HELPERS" patch-exists --target provider-usage --tag "v$PROVIDER_LATEST"; then
+  stop_or_note "Agent-setup에 provider-usage v${PROVIDER_LATEST}용 수정 묶음(hermes/patches/provider-usage/v$PROVIDER_LATEST.patch)이 없습니다. 아무것도 바꾸지 않았습니다. AI에게 \"Agent-setup 수정 묶음을 provider-usage v${PROVIDER_LATEST}에 옮겨줘\"라고 요청한 뒤 다시 실행하세요."
+fi
+[[ -e $PROVIDER_CHECKOUT/.git ]] || stop_or_note "provider-usage Git 설치본이 없습니다: $PROVIDER_CHECKOUT"
 
 step '보관 중인 Hermes stash 확인'
 STASH_BEFORE=$(autostashes)
@@ -172,10 +182,15 @@ else
   fi
 fi
 
+step "provider-usage 업데이트 (${PROVIDER_INSTALLED:-태그 없음} → v$PROVIDER_LATEST)"
+info '로컬 수정은 이름 붙인 stash로 보관하고 최신 태그용 수정 묶음을 다음 단계에서 적용합니다.'
+act "$PY" "$HELPERS" upgrade-plugin --checkout "$PROVIDER_CHECKOUT" --tag "v$PROVIDER_LATEST" \
+  || die 'provider-usage 업데이트 실패. 위 오류와 보관된 stash를 확인하세요.'
+
 step 'Hermes 로컬 수정 묶음 재적용'
-show_cmd "$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --apply
+show_cmd "$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --home "$HERMES_HOME" --apply
 if [[ $MODE == run ]]; then
-  if PATCH_OUT=$("$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --apply); then
+  if PATCH_OUT=$("$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --home "$HERMES_HOME" --apply); then
     printf '%s\n' "$PATCH_OUT" | sed 's/^/  │ /'
   else
     printf '%s\n' "$PATCH_OUT" | sed 's/^/  │ /'
@@ -183,7 +198,7 @@ if [[ $MODE == run ]]; then
   fi
 else
   info "현재 v$HERMES_INSTALLED 상태(읽기 전용 보고):"
-  "$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" | sed 's/^/  │ /' || true
+  "$PY" "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --home "$HERMES_HOME" | sed 's/^/  │ /' || true
 fi
 
 step 'Hermes 호환 패치 재적용 (위임 effort 보존, GPT 자식 fallback 순서)'
@@ -221,8 +236,18 @@ if [[ $MODE == run ]]; then
 fi
 act "$PY" "$AGENT_SETUP/hermes/scripts/install_omh_trigger_pack.py" --apply \
   || die "한국어 트리거 팩을 설치하지 못했습니다. $OMH_HOME/routing/trigger-packs/ko.json을 확인하세요."
-act "$PY" "$AGENT_SETUP/hermes/scripts/configure_provider_usage.py" --apply \
+act "$PY" "$AGENT_SETUP/hermes/scripts/configure_provider_usage.py" --home "$HERMES_HOME" --apply \
   || die 'provider-usage 표시 수정을 적용하지 못했습니다. 플러그인 파일 변경 여부를 확인하세요.'
+
+act mkdir -p "$HERMES_HOME/desktop-plugins/provider-usage"
+act cp "$PROVIDER_CHECKOUT/desktop/plugin.js" "$HERMES_HOME/desktop-plugins/provider-usage/plugin.js"
+
+step '외부 스킬 최신 정식판 갱신과 설명 적용'
+if [[ $MODE == run ]]; then
+  "$PY" "$HELPERS" refresh-external-skills --skills-dir "$HERMES_HOME/skills" --apply
+else
+  "$PY" "$HELPERS" refresh-external-skills --skills-dir "$HERMES_HOME/skills"
+fi
 
 step '설치 상태 점검'
 for doctor in "omh doctor --language ko" "hermes doctor"; do
@@ -280,6 +305,7 @@ fi
 step '최종 버전'
 if [[ $MODE == run ]]; then
   hermes --version | sed 's/^/  /'
+  info "provider-usage $("$PY" "$HELPERS" plugin-tag --checkout "$PROVIDER_CHECKOUT")"
   "$OMH_BIN" --version | sed 's/^/  /'
   if [[ -n $DOCTOR_FAILED ]]; then
     printf '\n업데이트는 끝났지만 점검 실패가 있습니다:%s. 위 출력을 확인하세요.\n' "$DOCTOR_FAILED"
@@ -289,6 +315,7 @@ if [[ $MODE == run ]]; then
 else
   info "Hermes v$HERMES_INSTALLED → v$HERMES_LATEST"
   info "OMH $OMH_CHANNEL $OMH_INSTALLED → stable $OMH_LATEST"
+  info "provider-usage ${PROVIDER_INSTALLED:-태그 없음} → v$PROVIDER_LATEST"
   if [[ -n $STOP_NOTE ]]; then
     printf '\n미리보기 결과: 실제 실행은 다음 이유로 멈춥니다.\n  %s\n' "$STOP_NOTE"
   else

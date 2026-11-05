@@ -5,14 +5,13 @@
   "memory_archive_requires": [
     "scope=project",
     "status=active",
-    "tag=temporary",
-    "tag=expires:YYYY-MM-DD<today",
-    "not protected",
-    "importance<0.8",
-    "not decision/preference/convention"
+    "lifecycle TTL expired or legacy temporary expiry",
+    "local archive protection allows",
+    "exact target recheck",
+    "archived status and active exclusion readback"
   ],
   "memory_hard_delete": false,
-  "stale_review_days": 180,
+  "stale_review_days": 90,
   "protect_tags": [
     "pinned",
     "important",
@@ -20,5 +19,7 @@
     "unresolved"
   ],
   "backup_delete": false,
-  "note": "보존 기간은 이번 구현 기본값. 사용자 설정으로 변경 가능. GAM 원본과 Codex 세션 영구 삭제 없음."
+  "note": "GAM lifecycle comes from the shared policy; local protection and legacy review helpers remain compatible.",
+  "shared_gam_policy": "../../shared/retention/policy.json",
+  "legacy_review_action": "report_only"
 }

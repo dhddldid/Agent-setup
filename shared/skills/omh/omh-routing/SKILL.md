@@ -55,7 +55,7 @@ OMH is Hermes-native workflow guidance, not a hidden executor or core patch. Her
 
 Compact lane map:
 
-- Intent -> plan: `deep-interview`, `ralplan`, `plan`, `loop`.
+- Intent -> plan: `deep-interview`, `ralplan`, `plan`, `dag-ulw`, `loop`.
 - Research and company ops: `research`, `source-finder`, `research-department`, `paper-learning`, `feedback-triage`, `strategy-brief`, `meeting-brief`.
 - Retained knowledge: `wiki`.
 - Materials and visual summaries: `design-quality-gate`, `frontend`, `accessibility-audit`, `visual-qa`, `materials-package`, `img-summary`, `report-package`, `deliverable-package`.
@@ -68,7 +68,7 @@ Treat OMH as the operating layer above individual Hermes-native skills. For a wo
 
 - On an unfamiliar or first-use pattern, briefly recommend the OMH-led route: explain that OMH can structure the problem, select the needed skills, and keep evidence boundaries clear.
 - After repeated accepted local patterns for the same user and workflow, continue OMH-led exploration, problem framing, skill composition, and prepared planning automatically. Keep the current workflow, next action, and prepared-versus-observed boundary visible.
-- Never let that autonomy bypass existing confirmation gates for destructive changes, credentials, external writes, deployment, executor dispatch, or starting a follow-on workflow engine (`ultrawork` — including its coordinated-scope, single-owner-persistence, delivery-boundary, and durable-checkpoint capabilities — `loop`, `ultraqa`) from another skill's output: an accepted plan or clarified brief is planning evidence, not permission — recommend the engine that fits the work's shape and wait for the user's explicit go-ahead. Do not claim that a native skill, subagent, review, CI, or merge ran unless matching observation exists.
+- Never let that autonomy bypass existing confirmation gates for destructive changes, credentials, external writes, deployment, executor dispatch, or starting a follow-on workflow engine (`dag-ulw`, `ultrawork` — including its coordinated-scope, single-owner-persistence, delivery-boundary, and durable-checkpoint capabilities — `loop`, `ultraqa`) from another skill's output: an accepted plan or clarified brief is planning evidence, not permission — recommend the engine that fits the work's shape and wait for the user's explicit go-ahead. Do not claim that a native skill, subagent, review, CI, or merge ran unless matching observation exists.
 - If a native Hermes capability is relevant, present it as an optional subordinate capability under the selected OMH workflow. OMH policy remains responsible for selecting and governing the workflow.
 
 ## Priority Rules
@@ -119,7 +119,7 @@ Record only what is observed. A task card, route, plan, `coding_delegation.json`
   - native subagents -> Hermes delegation when available, otherwise sequential lanes,
   - shell bridge commands -> optional bridge mode only.
 - Record observed delegation results when exposed. If unavailable, record `not_available` or `not_observed`.
-- Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+- Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 ## Progressive Disclosure References
 
@@ -133,6 +133,7 @@ Load these only when exact detail matters:
 - `references/coding-handoff-progress-reporting.md` for active progress cadence, background executor watchdogs, PR head/merge verification, and memory/context collision pitfalls.
 - `references/evidence-boundaries.md` for prepared-vs-observed, target topology, memory, and compatibility rules.
 - `references/structural-code-search.md` for ast-grep structural code search patterns and the grep fallback.
+- `references/human-voice.md` before writing prose a person reads: AI-writing tells to remove, Korean habits, reply shape.
 
 ## Recovery
 

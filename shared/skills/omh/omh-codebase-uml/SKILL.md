@@ -46,7 +46,7 @@ Bad example:
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+8 more`) - clarify, plan, ship, or loop goals.
+- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
 - If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
@@ -54,7 +54,7 @@ Bad example:
 
 Use when the user wants to see the shape of a codebase as one picture - a package, module, or focused-area diagram they can drop into Slack, Discord, a PR, or a doc - rather than a prose tour or a refreshed code index.
 
-    Strong routing signals: `codebase-uml`, `codebase uml`, `uml`, `plantuml`, `uml diagram`, `class diagram`, `package diagram`, `module diagram`, `architecture diagram`, `dependency diagram`, `module dependency diagram`, `visualize the codebase`, `visualize this codebase`, `visualize the code`, `visualize the architecture`, `codebase visualization`, `code visualization`, `diagram of the codebase`, `diagram the codebase`, `draw the architecture`, `draw the codebase`, `architecture picture`, `codebase picture`, `picture of the codebase`, `코드베이스 시각화`, `코드베이스 시각화해줘`, `코드베이스를 시각화`, `아키텍처 다이어그램`, `UML 다이어그램`, `패키지 다이어그램`, `클래스 다이어그램`, `코드베이스 다이어그램`, `코드 구조 그림`, `코드베이스 그림으로`, `코드 구조도`
+    Strong routing signals: `codebase-uml`, `codebase uml`, `uml`, `plantuml`, `uml diagram`, `class diagram`, `package diagram`, `module diagram`, `architecture diagram`, `dependency diagram`, `module dependency diagram`, `visualize the codebase`, `visualize this codebase`, `visualize the code`, `visualize the architecture`, `codebase visualization`, `code visualization`, `diagram of the codebase`, `diagram the codebase`, `draw the architecture`, `draw the codebase`, `architecture picture`, `codebase picture`, `picture of the codebase`, `코드베이스 시각화`, `코드베이스 시각화해줘`, `코드베이스를 시각화`, `아키텍처 다이어그램`, `UML 다이어그램`, `패키지 다이어그램`, `클래스 다이어그램`, `코드베이스 다이어그램`, `코드 구조 그림`, `코드베이스 그림으로`, `코드 구조도`, `диаграмма архитектуры`, `нарисуй архитектуру кода`, `схема кодовой базы`, `визуализируй кодовую базу`, `uml диаграмма`, `диаграмма классов`, `архитектурная диаграмма`
 
 ## Catalog Metadata
 
@@ -112,7 +112,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

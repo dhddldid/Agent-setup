@@ -3,6 +3,11 @@
 import json
 from pathlib import Path
 import re
+import sys
+
+# Support direct execution from the Hermes executor directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.latest_release import latest_release, tag_commit
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,8 +24,12 @@ def main():
             assert not p.is_absolute() and '..' not in p.parts, (s['name'], key)
         if s['source_kind'] == 'local':
             assert (ROOT / s['source_path'] / 'SKILL.md').is_file()
-    for record in [manifest['upstream'], *manifest['plugins']]:
-        assert re.fullmatch(r'[0-9a-f]{40}', record['commit'])
+    for record in [manifest['upstream'], *manifest['plugins'], manifest['omh']]:
+        assert not {'commit', 'reference_commit', 'version'} & record.keys()
+        repo = record['repo'].rstrip('/').removesuffix('.git').split('github.com/')[1]
+        tag = latest_release(repo)
+        assert tag, ('No stable release', repo)
+        assert re.fullmatch(r'[0-9a-f]{40}', tag_commit(repo, tag))
     table = (ROOT / 'INSTALL-LIST.md').read_text()
     assert table.count('| 종류 |') == 1
     for s in skills:

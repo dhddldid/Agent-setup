@@ -4,11 +4,11 @@
 
 | 폴더 | 원본 | 라이선스·출처 |
 |---|---|---|
-| codex/ | Codex-Setup | upstream/README.md, upstream-LICENSE-OMH (OMH MIT), 차용 스킬별 LICENSE, inventories/ 잠금 기록 |
+| codex/ | Codex-Setup | upstream/README.md, upstream-LICENSE-OMH (OMH MIT), 차용 스킬별 LICENSE, inventories/ 설치 목록 |
 | claude/ | Claude-Setup (로컬) | routes/claude-code.json의 OMH 출처, upstream-LICENSE-OMH (OMH MIT 사본) |
-| hermes/ | Hermes-Setup | LICENSE (MIT), docs/sources.md, manifest.json의 원본·플러그인 커밋 |
+| hermes/ | Hermes-Setup | LICENSE (MIT), docs/sources.md, manifest.json의 원본·플러그인 저장소 |
 
-OMH 참조 커밋은 Codex·Claude·Hermes 모두 OMH v4.0.0의 36e96fe다.
+Codex·Claude의 12개 분류·추론 표는 OMH v4.0.0(36e96fe) README의 추천 모델 표를 출처로 한다. Claude·Codex의 OMH 스킬 사본 버전은 `shared/skills/omh/SOURCE.json`에, Hermes OMH는 실행 시점에 조회한 최신 정식 릴리스로 설치한다.
 
 외부 공개 전에 확인할 항목:
 

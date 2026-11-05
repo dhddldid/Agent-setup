@@ -3,6 +3,24 @@ from __future__ import annotations
 import argparse,datetime,hashlib,json,os,re,shutil,subprocess,sys,tempfile,time,tomllib,urllib.error,urllib.request
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
+# Import the repository-level resolver independently of the caller's working directory.
+sys.path.insert(0,str(ROOT.parent/'scripts'))
+from latest_release import latest_release, tag_commit, validate_repo
+
+def resolve_source(source):
+ """Resolve a GitHub source to its stable release or default branch commit."""
+ repo=source.removeprefix('https://github.com/').removesuffix('.git').rstrip('/')
+ validate_repo(repo)
+ tag=latest_release(repo)
+ if tag:
+  commit=tag_commit(repo,tag)
+ else:
+  output=subprocess.check_output(['git','ls-remote','https://github.com/'+repo+'.git','HEAD'],text=True)
+  rows=[line.split() for line in output.splitlines() if line.split()[-1:] == ['HEAD']]
+  if len(rows)!=1 or not re.fullmatch(r'[0-9a-f]{40}',rows[0][0]):raise RuntimeError('Cannot resolve default branch: '+repo)
+  commit=rows[0][0]
+ return {'tag':tag,'commit':commit}
+
 def skill_sources(root=None):
  # Shared core skills, OMH workflow skills (Hermes has them natively), then Codex-only skills.
  root=Path(root or ROOT)
@@ -148,18 +166,21 @@ def install_tools(state):
  gam=uv_bin/'global-memory'
  gam_mcp=uv_bin/'global-memory-mcp'
  gam_python=gam_env/'bin/python'
- version=subprocess.run([str(gam_python),'-c','import importlib.metadata; print(importlib.metadata.version("global-memory-mcp"))'],capture_output=True,text=True) if gam_python.is_file() else None
- if not version or version.returncode or version.stdout.strip()!=lock['gam']['version'] or not gam.is_file() or not gam_mcp.is_file():
-  source=lock['gam']['source'].removesuffix('.git')+'.git@'+lock['gam']['commit']
-  run([uv,'tool','install','git+'+source])
-  version=subprocess.run([str(gam_python),'-c','import importlib.metadata; print(importlib.metadata.version("global-memory-mcp"))'],capture_output=True,text=True)
-  if version.returncode or version.stdout.strip()!=lock['gam']['version']:raise RuntimeError('uv installed an unexpected GAM version')
+ resolved={name:resolve_source(lock[name]['source']) for name in ('gam','codegraph')}
+ source=lock['gam']['source'].removesuffix('.git')+'.git@'+resolved['gam']['commit']
+ run([uv,'tool','install','--force','--reinstall','git+'+source])
+ version=subprocess.run([str(gam_python),'-c','import importlib.metadata; print(importlib.metadata.version("global-memory-mcp"))'],capture_output=True,text=True)
+ if version.returncode or not gam.is_file() or not gam_mcp.is_file():raise RuntimeError('GAM installation verification failed')
  npm=state/'tools/codegraph'
  binary=npm/'node_modules/.bin/codegraph';pkg=npm/'node_modules/@colbymchenry/codegraph/package.json'
- if not pkg.exists() or json.loads(pkg.read_text())['version']!=lock['codegraph']['version']:
-  npm.mkdir(parents=True,exist_ok=True)
-  for name in ('package.json','package-lock.json'):shutil.copy2(ROOT/'inventories'/('codegraph-'+name),npm/name)
-  run(['npm','ci','--no-audit','--no-fund'],cwd=npm.resolve(),env=toolenv)
+ npm.mkdir(parents=True,exist_ok=True)
+ tag=resolved['codegraph']['tag']
+ spec=lock['codegraph']['package']+'@'+tag.removeprefix('v') if tag else 'git+'+lock['codegraph']['source']+'.git#'+resolved['codegraph']['commit']
+ run(['npm','install','--no-audit','--no-fund',spec],cwd=npm.resolve(),env=toolenv)
+ if not binary.is_file() or not pkg.is_file():raise RuntimeError('CodeGraph installation verification failed')
+ if tag and json.loads(pkg.read_text())['version']!=tag.removeprefix('v'):raise RuntimeError('npm installed an unexpected CodeGraph version')
+ write_json(state/'tool-releases.json',resolved)
+ for name,item in resolved.items():print('Installed',name,item['tag'] or 'default-branch',item['commit'])
  tools={'python':str(gam_python),'codegraph':str(binary),'gam':str(gam),'gam_mcp':str(gam_mcp)}
  write_json(state/'tools.json',tools);return tools
 
@@ -225,7 +246,7 @@ def apply(state,home,codex_home,with_tools=True,isolated=False):
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('action',choices=['plan','apply','doctor','restore']);p.add_argument('--state',type=Path,default=state_root());p.add_argument('--home',type=Path,default=Path.home());p.add_argument('--codex-home',type=Path,default=Path(os.environ.get('CODEX_HOME',str(Path.home()/'.codex'))));p.add_argument('--skip-tools',action='store_true');p.add_argument('--isolated',action='store_true');p.add_argument('--backup',type=Path);a=p.parse_args()
- if a.action=='plan':out={'isolated':a.isolated,'source':str(ROOT),'state':str(a.state),'skills':sum(len(list(p.glob('*/SKILL.md'))) for p in skill_sources()),'work_pack_skills':len(json.loads((ROOT/'inventories/external-skills.json').read_text())['skills']),'routes':routes(),'steps':['preflight','install pinned tools','apply managed skills and instructions','merge MCP config','initialize GAM','install reviewed work packs','run doctor','run behavior evaluations']}
+ if a.action=='plan':out={'isolated':a.isolated,'source':str(ROOT),'state':str(a.state),'skills':sum(len(list(p.glob('*/SKILL.md'))) for p in skill_sources()),'work_pack_skills':len(json.loads((ROOT/'inventories/external-skills.json').read_text())['skills']),'routes':routes(),'steps':['preflight','install latest stable tools','apply managed skills and instructions','merge MCP config','initialize GAM','install reviewed work packs','run doctor','run behavior evaluations']}
  elif a.action=='apply':
   if sys.platform!='darwin':raise RuntimeError('Codex-Setup installation supports macOS only')
   if a.isolated or a.home.resolve()!=Path.home().resolve():raise RuntimeError('Apply only to the actual macOS user home')

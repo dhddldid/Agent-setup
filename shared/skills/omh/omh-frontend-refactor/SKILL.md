@@ -54,7 +54,7 @@ Bad example:
 
 Use when existing UI code needs restructuring without behavior change - an oversized component, boolean-flag state, effect chains, prop drilling - and the user wants a previewed, pass-ordered refactor plan rather than a new build or a verdict-only review.
 
-    Strong routing signals: `frontend-refactor`, `front-refactor`, `frontend refactor`, `refactor this component`, `refactor the component`, `refactor my component`, `component refactor`, `react refactor`, `refactor this hook`, `split this component`, `split the component`, `this component is too big`, `component is too large`, `state management review`, `state management`, `state colocation`, `too many useeffects`, `useeffect cleanup`, `clean up useeffect`, `prop drilling`, `컴포넌트 리팩터링`, `컴포넌트 리팩토링`, `컴포넌트 분리`, `컴포넌트가 너무 커`, `상태 관리 정리`, `상태 관리 리뷰`, `프론트 리팩터링`, `프론트엔드 리팩터링`, `useEffect 정리`
+    Strong routing signals: `frontend-refactor`, `front-refactor`, `frontend refactor`, `refactor this component`, `refactor the component`, `refactor my component`, `component refactor`, `react refactor`, `refactor this hook`, `split this component`, `split the component`, `this component is too big`, `component is too large`, `state management review`, `state management`, `state colocation`, `too many useeffects`, `useeffect cleanup`, `clean up useeffect`, `prop drilling`, `컴포넌트 리팩터링`, `컴포넌트 리팩토링`, `컴포넌트 분리`, `컴포넌트가 너무 커`, `상태 관리 정리`, `상태 관리 리뷰`, `프론트 리팩터링`, `프론트엔드 리팩터링`, `useEffect 정리`, `рефакторинг компонента`, `раздели компонент`, `компонент слишком большой`, `рефакторинг фронта`, `разбей компонент`
 
 ## Catalog Metadata
 
@@ -70,7 +70,7 @@ Quality bar:
 - Make impossible states unrepresentable before memoizing anything: flag clusters become one discriminated union or reducer, and a state machine only when transitions carry retries, resets, or races.
 - Treat effects as synchronization with external systems: deriving, event responses, prop-change resets, parent notification, and effect chains each have a non-effect form named in `omh-frontend-refactor/references/state-discipline.md`.
 - Run the micro pass in fixed order - dead code, naming, simplification, modernization - finishing one category before the next; the full contract is `omh-frontend-refactor/references/refactor-passes.md`.
-- Gate macro changes on characterization tests written before the refactor; snapshot tests lock markup, not behavior, and do not count.
+- Gate macro changes on characterization tests written before the refactor; snapshot tests lock markup, not behavior, and do not count. A change that alters DOM nesting, element type, or class composition also needs a before/after capture at one viewport, because green tests do not prove the render is unchanged.
 - The scroll test picks the decomposition entry point, and extraction follows independent change reasons completely - a half-extracted component is two coupled ones.
 
 Handoff policy:
@@ -126,7 +126,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

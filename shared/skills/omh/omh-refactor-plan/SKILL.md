@@ -44,10 +44,11 @@ Bad example:
 - If the import graph is unavailable, build the codegraph first or reduce the plan's confidence and say which files are unverified.
 - If a phase cannot be made independently green, split it further; two half-phases beat one unabortable one.
 - If reconnaissance finds the direction itself is unsettled, route back to `ralplan` before ordering phases.
+- If the module to deepen is chosen but its interface is not, shape it under contrasting constraints and recommend one design before phase 1; that is not a contested direction.
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+8 more`) - clarify, plan, ship, or loop goals.
+- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
 - If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
@@ -55,7 +56,7 @@ Bad example:
 
 Use when a refactor that crosses module boundaries is already decided and needs its execution shaped: which files move in which phase, what verifies each phase, and where each phase rolls back to - before anything is edited.
 
-    Strong routing signals: `refactor-plan`, `refactor plan`, `plan this refactor`, `plan the refactor`, `refactor planning`, `refactor phases`, `phased refactor`, `refactor in phases`, `refactor rollback plan`, `blast radius`, `module restructure plan`, `restructure plan`, `dependency upgrade`, `major version upgrade`, `framework upgrade`, `upgrade to the next major`, `breaking change upgrade`, `lockfile`, `리팩터링 계획`, `리팩토링 계획`, `리팩터링 단계`, `단계별 리팩터링`, `리팩터링 계획 세워줘`, `리팩터링 롤백 계획`
+    Strong routing signals: `refactor-plan`, `refactor plan`, `plan this refactor`, `plan the refactor`, `refactor planning`, `refactor phases`, `phased refactor`, `refactor in phases`, `refactor rollback plan`, `blast radius`, `module restructure plan`, `restructure plan`, `dependency upgrade`, `major version upgrade`, `framework upgrade`, `upgrade to the next major`, `breaking change upgrade`, `lockfile`, `리팩터링 계획`, `리팩토링 계획`, `리팩터링 단계`, `단계별 리팩터링`, `리팩터링 계획 세워줘`, `리팩터링 롤백 계획`, `спланируй рефакторинг`, `план рефакторинга`, `рефакторинг по фазам`, `поэтапный рефакторинг`, `рефакторинг по шагам`
 
 ## Catalog Metadata
 
@@ -72,7 +73,7 @@ Quality bar:
 - Ship the files table with the plan: one row per file with action, phase, and blocks/blocked-by; a row without a phase is unplanned work.
 - Size verification to the blast radius, not to optimism: a phase touching public surfaces or persisted shapes carries the full gate, not the fast one.
 - For a dependency or framework upgrade, read four inputs before ordering phases — advisory and end-of-life intake, the licence delta at the target version, the upstream migration guide item by item against this codebase, and lockfile handling in the same commit as the manifest; a breaking change nobody checked is a gap, not a pass. The full contract is `omh-refactor-plan/references/dependency-upgrade.md`.
-- Stop at the approval gate and hand the user the go/no-go, whole plan or first phase.
+- Stop at the approval gate and hand the user the go/no-go, whole plan or first phase; when the approved phases split into groups with disjoint files plus a verification step, a whole-plan go may also name `dag-ulw` with the fit reason in one line, started only on the user's explicit go-ahead: the phase order becomes `depends_on` and each phase's verification command its node's VERIFY. `dag-ulw` runs without pausing between phases and neither commits nor rolls back, so say the per-phase commits are cut after the run and the rollback points stay with the user, or take the first-phase path.
 
 Handoff policy:
 
@@ -80,7 +81,7 @@ Hermes owns reconnaissance and the phased plan; implementation of any approved p
 
 Required inputs:
 
-- the decided target shape (what moves where), or a pointer to the accepted plan that decided it
+- the decided target shape (what moves where), or a pointer to the accepted plan that decided it; for a chosen deepening candidate whose interface is still open, shape it first per `omh-refactor-plan/references/interface-shaping.md`
 - the affected-file evidence: import graph, codegraph handoff, or an observed file inventory
 - the regression gates that exist today (test suite, typecheck, generated-artifact checks)
 
@@ -110,7 +111,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

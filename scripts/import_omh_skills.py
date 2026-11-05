@@ -7,7 +7,7 @@ quoted `description`, and records the OMH version in shared/skills/omh/SOURCE.js
 Hermes keeps using its own OMH plugin and does not install this copy.
 
   python3 scripts/import_omh_skills.py                 # from ~/.omh/skills
-  python3 scripts/import_omh_skills.py --source DIR --version 4.0.0
+  python3 scripts/import_omh_skills.py --source DIR --version <release-tag>
 """
 import argparse
 import json
@@ -51,7 +51,14 @@ def main():
     manifest = source.parent / "manifest.json"
     if not version and manifest.is_file():
         version = json.loads(manifest.read_text()).get("version")
+    if version:
+        version = version.removeprefix("v")
     folders = sorted(p.parent for p in source.rglob("SKILL.md"))
+    if not folders:
+        raise SystemExit("OMH source contains no skills: " + str(source))
+    # Validate the complete input before replacing the previous release copy.
+    for folder in folders:
+        normalize((folder / "SKILL.md").read_text(encoding="utf-8"))
     names = [p.name for p in folders]
     if len(names) != len(set(names)):
         raise SystemExit("duplicate OMH skill names")

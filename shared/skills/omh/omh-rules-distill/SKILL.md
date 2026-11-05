@@ -33,9 +33,10 @@ Bad example:
 
 ## Completion Checklist
 
-- The durable fact, source evidence, retrieval hint, and staleness risk are recorded.
-- Uncertain or conflicting knowledge is marked as review-needed rather than permanent truth.
-- Separate coding or docs tasks are extracted instead of buried in notes.
+- Every candidate in principle_candidate_set/v1 cites the repeated observations it rests on; a candidate resting on one observation stays needs-evidence in review_queue/v1.
+- Every candidate is classed mechanical or judgement before it is worded. A mechanical candidate is a miss a machine can find from the text alone (a forbidden call, a disallowed import, a file in the wrong place), and its destination is a check (a linter rule, test, hook, or CI step); when the repository already has a check for it that never runs or no longer fails, the candidate is repairing that check, not adding another. Its approved_patch_handoff/v1 names the check and where it is wired, and sets as an acceptance criterion the run the implementer must observe: the check fails with the violation injected and passes once it is reverted. A mechanical candidate outside the chosen destination boundary is reported as a check proposal outside the boundary, never reworded as prose. Only judgement candidates, which need a reader (consistency across files, fit with the code around them), are worded as prose.
+- duplication_conflict_report/v1 names the existing rule or check each candidate repeats or contradicts, or says none was found and where it looked.
+- Nothing reached a destination without an approval recorded in review_queue/v1.
 
 ## Recovery Notes
 
@@ -77,7 +78,7 @@ Keep principle extraction and candidate review in Hermes. Editing AGENTS.md, cat
 Required inputs:
 
 - source corpus: skills, prompts, traces, reviews, failures, or docs
-- destination boundary: AGENTS, skill catalog, prompt, docs, memory, or no-write review
+- destination boundary: AGENTS, skills, prompt, docs, memory, check, or no-write review
 - rule granularity and acceptance criteria
 - reviewer or approval requirement
 
@@ -92,7 +93,7 @@ Expected outputs:
 
 Artifact expectations:
 
-- principle_candidate_set/v1 with source references, repeated pattern, candidate wording, scope, non-goals, and risk
+- principle_candidate_set/v1 with source references, repeated pattern, mechanical or judgement class, candidate wording or check, scope, non-goals, and risk
 - duplication_conflict_report/v1 with already-covered rules, conflicts, and stale guidance
 - review_queue/v1 separating proposed, approved, rejected, deferred, and needs-evidence candidates
 
@@ -115,7 +116,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

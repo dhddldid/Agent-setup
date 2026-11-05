@@ -45,7 +45,7 @@ Bad example:
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+8 more`) - clarify, plan, ship, or loop goals.
+- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
 - If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
@@ -91,7 +91,8 @@ mid-interview check now and continue from Round 4.
 Give every question two to four real candidates, the one you recommend first: answers the user
 could actually pick, drawn from the request, repo evidence, or the tradeoff the question is
 really about, never filler to reach a count, and never a candidate whose text is itself a bare
-number (a reply by number would collide with it, in the list below and in a messaging picker).
+number (a reply by number would collide with it). If memory suggests candidates, draw one
+from the request or repository, so memory never fills every slot.
 
 - **With Hermes' `clarify` tool**, when `clarify` is in your tool list or tool_search finds it: keep the header in your
   message and ask through `clarify` — one `questions` entry, the sentence as `question`, the
@@ -133,7 +134,7 @@ stopping, stop and plan.
 
 Use before planning or execution when requirements are materially ambiguous.
 
-    Strong routing signals: `deep-interview`, `$deep-interview`, `interview me`, `don't assume`, `clarify`, `feature shaping`, `ambiguous product request`, `one question`, `要件を詰めて`, `曖昧な要求`, `一問一答で確認`, `オンボーディング`, `온보딩`, `부드럽게`, `모호한 제품 요청`, `기획자`, `개발자 사이`, `澄清需求`, `需求不明确`, `一次问一个问题`, `perjelas kebutuhan fitur ini`, `bantu gali kebutuhan sebelum bikin solusi`, `urai kebutuhan yang masih ambigu`, `klarifikasi permintaan ini lewat tanya jawab`
+    Strong routing signals: `deep-interview`, `$deep-interview`, `interview me`, `don't assume`, `clarify`, `feature shaping`, `ambiguous product request`, `one question`, `要件を詰めて`, `曖昧な要求`, `一問一答で確認`, `オンボーディング`, `온보딩`, `부드럽게`, `모호한 제품 요청`, `기획자`, `개발자 사이`, `задай вопросы по одному`, `размытая задача`, `грилл ми`, `задай уточняющие вопросы`, `澄清需求`, `需求不明确`, `一次问一个问题`, `perjelas kebutuhan fitur ini`, `bantu gali kebutuhan sebelum bikin solusi`, `urai kebutuhan yang masih ambigu`, `klarifikasi permintaan ini lewat tanya jawab`, `làm rõ yêu cầu của tính năng này`, `giúp khai thác yêu cầu trước khi xây dựng giải pháp`, `phân tích các yêu cầu còn mơ hồ`, `làm rõ yêu cầu này thông qua hỏi đáp`
 
 ## Catalog Metadata
 
@@ -189,7 +190,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a stop condition or a decision the user owns ends the turn, offer the next action as a question rather than declaring what will not be done.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

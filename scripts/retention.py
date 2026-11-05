@@ -125,23 +125,47 @@ def remove(path):
 
 
 def run_gam(home, apply):
-    """Archive explicitly expired temporary GAM notes (never hard delete)."""
-    state = state_dir(home).parent / "codex-setup"
-    tools = state / "tools.json"
-    script = ROOT / "codex" / "scripts" / "maintain.py"
-    if not tools.is_file() or not script.is_file():
-        return {"status": "skipped", "reason": "GAM tools record not found"}
-    python = json.loads(tools.read_text()).get("python")
-    if not python or not Path(python).exists():
-        return {"status": "skipped", "reason": "GAM python not found"}
-    args = [python, str(script)] + (["--apply"] if apply else [])
+    """Invoke the shared adapter with executor-neutral installation discovery.
+
+    Local retention.json may set gam_python, gam_command, gam_config,
+    gam_vault and gam_state. Codex tools.json is a compatibility fallback.
+    """
+    settings = local_config(home)
+    python = settings.get("gam_python")
+    command = settings.get("gam_command")
+    if not python:
+        uv = shutil.which("uv")
+        if uv:
+            found = subprocess.run([uv, "tool", "dir"], capture_output=True, text=True, timeout=30)
+            if found.returncode == 0:
+                candidate = Path(found.stdout.strip()) / "global-memory-mcp/bin/python"
+                if candidate.is_file():
+                    python = str(candidate)
+    if not python:
+        tools = state_dir(home).parent / "codex-setup/tools.json"
+        if tools.is_file():
+            record = json.loads(tools.read_text())
+            python, command = record.get("python"), command or record.get("gam_mcp")
+    if not python or not Path(python).is_file():
+        return {"status": "skipped", "reason": "GAM Python unavailable; set gam_python in local retention.json"}
+    script = ROOT / "shared/skills/core/gam-memory/scripts/gam_retention.py"
+    args = [python, str(script), "--policy", str(POLICY)]
+    for key, flag in (("gam_config", "--config"), ("gam_vault", "--vault"), ("gam_state", "--gam-state")):
+        if settings.get(key):
+            args += [flag, settings[key]]
+    if command:
+        args += ["--command", command]
+    if apply:
+        args += ["--apply"]
     done = subprocess.run(args, capture_output=True, text=True, cwd=script.parent, timeout=600)
-    if done.returncode != 0:
-        return {"status": "failed", "exit_code": done.returncode, "stderr": done.stderr[-300:]}
+    if done.returncode:
+        return {"status": "failed", "exit_code": done.returncode, "reason": "GAM lifecycle adapter failed; inspect local stderr privately"}
     try:
-        return dict(json.loads(done.stdout), status="ok")
+        result = json.loads(done.stdout)
+        failed = any(r.get("outcome") == "failed" for r in result.get("receipts", []))
+        return dict(result, status="failed" if failed else "ok")
     except ValueError:
-        return {"status": "ok", "output": done.stdout[-300:]}
+        return {"status": "failed", "reason": "GAM lifecycle adapter returned invalid JSON"}
 
 
 def sweep(home, apply=False, policy=None, now=None, gam=True):

@@ -145,6 +145,80 @@ class SnapshotTests(unittest.TestCase):
             self.assertIn('no_patch → applied', result.stdout)
 
 
+class PluginUpdateTests(unittest.TestCase):
+    def test_upgrade_preserves_tracked_and_untracked_edits_and_applies_patch(self):
+        from unittest.mock import patch
+        import apply_local_patches as local
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, checkout = root / 'source', root / 'plugin'
+            def git(path, *args):
+                return subprocess.run(['git', '-C', str(path), *args], check=True,
+                                      capture_output=True, text=True).stdout.strip()
+            source.mkdir()
+            git(source, 'init')
+            git(source, 'config', 'user.name', 'Test')
+            git(source, 'config', 'user.email', 'test@example.invalid')
+            (source / 'plugin.py').write_text('old\n')
+            git(source, 'add', '.')
+            git(source, 'commit', '-m', 'old')
+            git(source, 'tag', 'v0.2.1')
+            subprocess.run(['git', 'clone', str(source), str(checkout)], check=True, capture_output=True)
+            (source / 'plugin.py').write_text('new\n')
+            git(source, 'commit', '-am', 'new')
+            git(source, 'tag', 'v0.3.1')
+            (source / 'plugin.py').write_text('new\ncustom\n')
+            patch_dir = root / 'patches/provider-usage'
+            patch_dir.mkdir(parents=True)
+            (patch_dir / 'v0.3.1.patch').write_text(git(source, 'diff') + '\n')
+            (checkout / 'plugin.py').write_text('old\nlocal edit\n')
+            (checkout / 'mine.txt').write_text('keep me\n')
+            with patch.object(h, 'ROOT', root), patch.object(local, 'PATCHES', root / 'patches'):
+                h.upgrade_plugin(checkout, 'v0.3.1')
+                self.assertEqual(h.plugin_tag(checkout), 'v0.3.1')
+                self.assertEqual((checkout / 'plugin.py').read_text(), 'new\n')
+                self.assertIn('local edit', git(checkout, 'stash', 'show', '-p'))
+                self.assertEqual(git(checkout, 'show', 'stash@{0}^3:mine.txt'), 'keep me')
+                row = local.status('provider-usage', checkout)
+                self.assertEqual(row['status'], 'applicable')
+                self.assertEqual(local.git(checkout, 'apply', row['patch']).returncode, 0)
+                self.assertEqual(local.status('provider-usage', checkout)['status'], 'applied')
+                stash = git(checkout, 'stash', 'list')
+                h.upgrade_plugin(checkout, 'v0.3.1')
+                self.assertEqual(git(checkout, 'stash', 'list'), stash)
+                self.assertIn('custom', (checkout / 'plugin.py').read_text())
+
+    def test_missing_patch_and_invalid_tag_prevent_any_git_changes(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory, patch.object(h, 'ROOT', Path(directory)), \
+                patch.object(h, 'run') as run:
+            for tag in ('v0.3.1', 'v0.3.1-rc1', '../escape'):
+                with self.assertRaises(ValueError):
+                    h.upgrade_plugin(Path(directory), tag)
+            run.assert_not_called()
+
+    def test_refresh_preview_and_apply_commands(self):
+        from unittest.mock import patch
+        skills = Path('/private/skills with spaces')
+        commands = h.external_skill_commands(sys.executable, skills)
+        self.assertEqual(commands[0][2:], ['--all', '--apply', '--refresh', '--replace-existing',
+                                         '--skills-dir', str(skills)])
+        self.assertIn('--all', commands[0])
+        self.assertEqual(commands[1][-3:], ['--skill-root', str(skills), '--apply'])
+        with patch.object(h.subprocess, 'run') as run:
+            self.assertEqual(h.main(['refresh-external-skills', '--skills-dir', str(skills)]), 0)
+            run.assert_not_called()
+            self.assertEqual(h.main(['refresh-external-skills', '--skills-dir', str(skills), '--apply']), 0)
+            self.assertEqual([c.args[0] for c in run.call_args_list], commands)
+
+    def test_plugin_version_snapshot_reports_expected_upgrade(self):
+        before = snapshot(provider_usage_tag='v0.2.1')
+        after = snapshot(provider_usage_tag='v0.3.1')
+        row = next(r for r in h.diff_snapshots(before, after) if r['label'] == 'provider-usage 버전')
+        self.assertEqual(row['detail'], 'v0.2.1 → v0.3.1')
+        self.assertFalse(row['attention'])
+
+
 class UpdateScriptTextTests(unittest.TestCase):
     def test_doctor_npm_advisories_only_are_upstream(self):
         npm = ('  Found 2 issue(s) to address:\n\n'

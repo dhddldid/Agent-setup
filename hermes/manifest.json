@@ -1,21 +1,17 @@
 {
   "schema_version": 1,
   "upstream": {
-    "repo": "https://github.com/NousResearch/hermes-agent.git",
-    "commit": "d923a5eb487a17c0a68801bba9ef0f56c81040a8"
+    "repo": "https://github.com/NousResearch/hermes-agent.git"
   },
   "plugins": [
     {
       "name": "provider-usage",
       "required": true,
-      "repo": "https://github.com/PhoeniXAbhisheK/hermes-plugin-provider-usage",
-      "commit": "023e7e54d6f6c5ec55314f7603ed5b80af81cd54",
-      "version": "0.2.1"
+      "repo": "https://github.com/PhoeniXAbhisheK/hermes-plugin-provider-usage"
     }
   ],
   "omh": {
-    "repo": "https://github.com/rlaope/oh-my-hermes",
-    "reference_commit": "36e96feb432068cd27eecf5b434acdf1328341b4"
+    "repo": "https://github.com/rlaope/oh-my-hermes"
   },
   "skills": [
     {

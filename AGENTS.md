@@ -4,8 +4,8 @@
 
 - 작업 전에 README.md와 docs/comparison.md를 읽고, 대상 실행기 폴더의 지침을 따른다.
 - 실행기별 원본은 codex/, claude/, hermes/에 있다. 모델·추론·위임·fallback·스킬 발견·설치 방식은 각 폴더에서 관리한다.
-- 외부 구성요소(Hermes, OMH, 플러그인, 가져온 스킬 사본)는 각 원본의 최신 정식 릴리스 태그를 기준으로 고정한다. main 브랜치·preview·canary 빌드는 기준으로 쓰지 않는다. 새 정식 릴리스가 나오면 `python3 scripts/check_releases.py`로 확인하고 고정값·사본·문서를 함께 올린다.
-- Hermes 본체와 provider-usage 플러그인은 최신 정식 릴리스 위에 이 사용자의 수정 묶음(`hermes/patches/<대상>/<태그>.patch`)을 적용해 쓴다. 정식판을 올리면 `python3 hermes/scripts/apply_local_patches.py`로 적용 상태를 확인하고, 새 태그용 패치가 없거나 충돌하면 수정을 새 버전에 옮긴 뒤 그 태그 이름으로 패치를 저장한다.
+- 외부 구성요소(Hermes, OMH, provider-usage 플러그인, CodeGraph, GAM, 외부 스킬)는 저장소에 원본 저장소·설치 방법만 두고, 설치기와 업데이트 명령이 실행할 때마다 GitHub `releases/latest`의 최신 정식 릴리스를 조회해 따른다(Python은 `scripts/latest_release.py`). 정식 릴리스가 없는 원본만 기본 브랜치를 받는다. main 브랜치·preview·canary 빌드는 쓰지 않는다. `python3 scripts/check_releases.py`는 이 컴퓨터의 설치본을 최신 정식판과 비교하고 최신 태그용 패치 유무를 보여준다. 업데이트는 Hermes는 `bash hermes/scripts/update.sh`, Claude Code·Codex는 `bash scripts/update_claude_codex.sh`로 한다.
+- Hermes 본체와 provider-usage 플러그인은 최신 정식 릴리스 위에 이 사용자의 수정 묶음(`hermes/patches/<대상>/<태그>.patch`)을 적용해 쓴다. 최신 태그용 패치가 없으면 업데이트 명령이 바꾸기 전에 멈춘다. 이때 수정을 새 버전에 옮겨 그 태그 이름으로 패치를 저장하고, `python3 hermes/scripts/apply_local_patches.py`로 적용 상태를 확인한다.
 - 현재 실행 중인 에이전트는 자기 실행기의 모델 정책을 쓴다. Hermes 안에서 쓰는 Codex 제공자는 Hermes 정책을 따르고, 외부로 실행한 Codex·Claude Code 프로세스는 각자의 정책을 따른다.
 - 설치·업데이트는 요청한 실행기와 프로필에 적용한다. 계정·인증·대화·메모리·브라우저 데이터·DB·로그는 Git 저장소에 넣지 않는다.
 - 세 실행기의 전역 지침은 `shared/rules/`가 원본이다. 고친 뒤 `python3 scripts/build_rules.py`로 codex/instructions/AGENTS.md, claude/templates/global-rules.md, hermes/templates/common-rules.md를 만든다. 공통 스킬 원본은 `shared/skills/`다. Hermes의 Aside·문서 전달 규칙 원본은 hermes/templates/다.

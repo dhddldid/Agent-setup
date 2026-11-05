@@ -2,7 +2,7 @@
 
 `H`는 `${HERMES_HOME:-$HOME/.hermes}`다. 기본은 `~/.hermes/`, 이름 있는 프로필은 `~/.hermes/profiles/<이름>/`이다. `$(brew --prefix)`는 설치 대상인 Apple Silicon에서 보통 `/opt/homebrew`다. npm·uv·Go 실행 파일 위치는 각 관리자의 설정을 따른다.
 
-비-OMH 스킬 91개를 기준으로 한다. 공식 원본 57개와 Agent-setup 공통 스킬 34개다. 공통 스킬은 도구·기준 12개(desktop-app-provisioning, gam-memory, codegraph-context, aside-browser, coding-code-review, coding-maintenance, agent-setup-maintenance, humanize-korean, humanizer, shadcn, shadcn-lint, logo-design)와 Hermes 작업 교훈 공개본 22개다. 공통 스킬은 `skills/`에 Agent-setup `shared/skills/`와 같은 내용으로 둔다. 스킬 문서는 설치하지만 CLI·라이브러리·서비스 권한은 해당 작업을 사용할 때 준비한다. 공식 스킬은 로컬 수정본이 아니라 고정 공식 원본을 설치한다. OMH 스킬은 OMH 설치기로 별도 관리한다.
+비-OMH 스킬 91개를 기준으로 한다. 공식 원본 57개와 Agent-setup 공통 스킬 34개다. 공통 스킬은 도구·기준 12개(desktop-app-provisioning, gam-memory, codegraph-context, aside-browser, coding-code-review, coding-maintenance, agent-setup-maintenance, humanize-korean, humanizer, shadcn, shadcn-lint, logo-design)와 Hermes 작업 교훈 공개본 22개다. 공통 스킬은 `skills/`에 Agent-setup `shared/skills/`와 같은 내용으로 둔다. 스킬 문서는 설치하지만 CLI·라이브러리·서비스 권한은 해당 작업을 사용할 때 준비한다. 공식 스킬은 설치 시점에 조회한 Hermes 최신 정식 태그의 공식 원본을 설치한다. OMH 스킬은 OMH 설치기로 별도 관리한다.
 
 | 종류 | 항목 | 용도 | 설치 기준·추가 준비 | 일반 설치 경로 | 추가 도구·설정 경로 |
 |---|---|---|---|---|---|
@@ -12,11 +12,11 @@
 | MCP 연결 | Aside 연결 장치 | 프로필별 `repl` 도구 하나, 안 쓰는 연결 15분 뒤 자동 종료 | 필수; `scripts/install_aside_bridge.py --apply` | `H/integrations/aside-browser/` | 원본 `integrations/aside-browser/`; `mcp_servers.aside`에 등록 |
 | 앱 | Chrome·Edge·Safari | 기존 로그인 브라우저 활용 | 사용하는 브라우저만; 프로필 가져오기는 지원 여부 확인 | `/Applications/` | `~/Library/Application Support/Google/Chrome/`, `~/Library/Application Support/Microsoft Edge/`, Safari는 OS 관리 |
 | 확장·스킬팩 | OMH | 작업 분류·라우팅·검증 지침 | 필수; 공식 install·setup | `~/.omh/`; `~/.local/share/omh/` | Hermes 등록 `H/plugins/omh/`; 스킬 실제 경로는 `skills.external_dirs` 확인 |
-| 업데이트 스크립트 | update.sh | Hermes·OMH를 최신 정식 릴리스로 올리고 사용자 지정을 다시 맞춤 | 업데이트할 때 Agent-setup 루트에서 `bash hermes/scripts/update.sh`; Hermes Desktop 업데이트 버튼 대신 사용 | Agent-setup 체크아웃 | `scripts/update.sh`, `scripts/update_helpers.py`; [업데이트](docs/model-routing.md#업데이트) |
+| 업데이트 스크립트 | update.sh | Hermes·OMH·provider-usage·외부 스킬을 실행 시점의 최신 정식 릴리스로 올리고 사용자 지정을 다시 맞춤 | 업데이트할 때 Agent-setup 루트에서 `bash hermes/scripts/update.sh`; Hermes Desktop 업데이트 버튼 대신 사용 | Agent-setup 체크아웃 | `scripts/update.sh`, `scripts/update_helpers.py`; [업데이트](docs/model-routing.md#업데이트) |
 | OMH 사용자 설정 | 한국어 트리거 팩 | 한국어 작업 요청을 `dag-ulw`·`ultrawork` 등 OMH 흐름에 연결 | 필수; `scripts/install_omh_trigger_pack.py --apply`, 확인은 `--check` | `~/.omh/routing/trigger-packs/ko.json` | 원본 `omh/trigger-packs/ko.json` |
 | Hermes 본체 수정 | 수정 묶음 | 계정 선택·사용량 표시·모델별 계정 쿨다운·턴 복구 | 필수; 최신 정식 릴리스 위에 `scripts/apply_local_patches.py --apply` | `H/hermes-agent/` 작업 트리 | 원본 `patches/hermes-agent/<태그>.patch`; 새 태그용 패치가 없으면 업데이트 전에 이전 |
 | 런타임 호환 패치 | 자식 fallback 순서·추론 | GPT 시작 자식의 Opus 마지막 순서와 작업별 추론 유지 | `scripts/update.sh`가 업데이트마다 다시 적용; 따로 적용할 때는 미리보기·적용·새 프로세스 검증 | 실제 소스의 `agent/chat_completion_helpers.py`, `tools/delegate_tool_config.py` | `scripts/configure_delegation_reasoning.py`, `scripts/configure_gpt_fallback.py`; [적용 기준](docs/model-routing.md) |
-| Hermes 플러그인 | provider-usage | GPT·Claude 사용량·잔여 한도·리셋 시간 | 필수; 설치·활성화·[GPT·Claude만 표시](docs/provider-usage.md)·실제 조회 | `H/plugins/provider-usage/` | Desktop UI `H/desktop-plugins/provider-usage/`; 표시 어댑터 `scripts/configure_provider_usage.py`; 인증은 사용자의 로컬 저장소; 수정 묶음 `patches/provider-usage/<태그>.patch` |
+| Hermes 플러그인 | provider-usage | GPT·Claude 사용량·잔여 한도·리셋 시간 | 필수; 최신 정식 릴리스 태그로 설치·활성화·[GPT·Claude만 표시](docs/provider-usage.md)·실제 조회. `scripts/update.sh`가 업데이트마다 최신 정식 태그로 올림 | `H/plugins/provider-usage/` | Desktop UI `H/desktop-plugins/provider-usage/`; 표시 어댑터 `scripts/configure_provider_usage.py`; 인증은 사용자의 로컬 저장소; 수정 묶음 `patches/provider-usage/<태그>.patch`; 새 태그용 패치가 없으면 업데이트 전에 이전 |
 | Hermes 플러그인 | web-codex-search | 메인 모델이 Claude여도 웹 검색을 로그인한 GPT(openai-codex) 계정의 서버 검색으로 처리 | 필수(메인 모델이 GPT 외일 때); 복사 후 `plugins.enabled`에 추가, `hermes config set web.search_backend codex-search` | `H/plugins/web-codex-search/` | 원본 `plugins/web-codex-search/` (이 저장소 제작) |
 | Hermes 플러그인 | discord-project-sidebar | Discord 세션을 Desktop 프로젝트 아래에 표시 | 선택; Discord 사용 시 [연동 안내](docs/discord.md) | `H/plugins/discord-project-sidebar/` | 원본 `discord/plugins/`; 프로젝트 지도는 `discord.channel_prompts` |
 | Hermes 플러그인 | desktop-discord-reports | Desktop 작업 결과를 프로젝트 채널 스레드로 보고 | 선택; Discord 사용 시 | `H/plugins/desktop-discord-reports/` | 원본 `discord/plugins/`; 스레드 대응 `H/state/desktop-discord-threads.json` |
@@ -115,6 +115,6 @@
 | 스킬 | clock-fenced-offline-integration | 시각 기준 오프라인 통합 확인 | Agent-setup 공통 스킬(Hermes 작업 교훈 공개본) | `H/skills/clock-fenced-offline-integration/` | — |
 | 스킬 | future-effective-memory-tdd | 미래 시점 적용 기억 갱신을 TDD로 수정 | Agent-setup 공통 스킬(Hermes 작업 교훈 공개본) | `H/skills/future-effective-memory-tdd/` | — |
 | 스킬 | project-reference-adoption | 참고 링크의 프로젝트 도입 검토 | Agent-setup 공통 스킬(Hermes 작업 교훈 공개본) | `H/skills/project-reference-adoption/` | — |
-| 외부 스킬 | Azure·Entra 26, Azure 비용 4, 마케팅 5, 모션 디자인 2(motion-design·hyperframes-animation), archify, iterative-retrieval (39개) | Codex·Claude Code와 같은 업무 스킬 | Agent-setup 외부 목록 `codex/inventories/external-skills.json`의 고정 원본(원본별 최신 정식 릴리스 태그의 커밋); 설명 조정 `codex/config/skill-descriptions.json` | `H/skills/<스킬명>/` | 설치 기록은 Agent-setup 상태 경로의 별도 잠금 파일 |
+| 외부 스킬 | Azure·Entra 26, Azure 비용 4, 마케팅 5, 모션 디자인 2(motion-design·hyperframes-animation), archify, iterative-retrieval (39개) | Codex·Claude Code와 같은 업무 스킬 | Agent-setup 외부 목록 `codex/inventories/external-skills.json`의 원본(설치 시점에 조회한 원본별 최신 정식 릴리스 태그의 커밋); 설명 조정 `codex/config/skill-descriptions.json` | `H/skills/<스킬명>/` | 설치 기록은 Agent-setup 상태 경로의 별도 잠금 파일 |
 
 출처와 설치 기준은 [manifest.json](manifest.json), 실행 방법은 [설치 안내](INSTALL_FOR_AGENTS.md)에 있다. Hermes 기본 내장 플러그인을 전부 복제하지 않는다.
