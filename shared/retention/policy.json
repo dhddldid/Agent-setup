@@ -21,6 +21,6 @@
     {"id": "hermes-blocked-scripts", "executor": "hermes", "root": "{hermes_home}/cache/blocked-scripts", "select": "files", "glob": "*", "days": 30, "keep_latest": 3},
     {"id": "codegraph-indexes", "executor": "shared", "select": "codegraph", "days": 30, "keep_latest": 3}
   ],
-  "hermes_desktop_chats": {"script": "hermes/discord/scripts/discord-project-hygiene.py", "keep_latest_per_project": 4, "max_days": 30, "include_archived": true, "run_records_grace_hours": 2, "run_record_sources": ["cron", "kanban", "oneshot"], "discord_thread_idle_days": 3, "discord_thread_keep_latest": 3},
+  "hermes_desktop_chats": {"script": "hermes/discord/scripts/discord-project-hygiene.py", "keep_latest_per_project": 3, "max_days": 3, "include_archived": true, "run_records_grace_hours": 2, "run_record_sources": ["cron", "kanban", "oneshot"], "discord_thread_idle_days": 3, "discord_thread_keep_latest": 3},
   "gam": {"temporary_expiry_archive": true, "stale_review_days": 180, "stale_action": "report", "hard_delete": false}
 }

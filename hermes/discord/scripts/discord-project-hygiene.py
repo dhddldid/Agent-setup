@@ -4,8 +4,8 @@
    groups them under the project instead of Home).
 2. Discord: in each project channel, delete threads idle > IDLE_DAYS, keeping the newest
    KEEP threads. Threads used as cron delivery targets are never deleted.
-3. Hermes: per sidebar group (each project + Home), permanently delete every chat beyond the
-   newest CHAT_KEEP, and any chat (archived included) idle > CHAT_MAX_DAYS. Only chats the user
+3. Hermes: per sidebar group (each project + Home), keep the newest CHAT_KEEP chats whatever
+   their age; permanently delete every other chat (archived included) idle > CHAT_MAX_DAYS. Only chats the user
    actually had count toward CHAT_KEEP: cron/kanban/oneshot run records, delegated "Subagent:" chats and empty (0-message) chats are deleted
    once idle > RECENT_GRACE.
    Pinned chats and cron-alarm thread sessions are skipped.
@@ -38,8 +38,8 @@ for _sp in _venvs:
 
 IDLE_DAYS = 3        # Discord threads: idle days before deletion
 KEEP = 3             # Discord threads kept per channel
-CHAT_KEEP = 4        # sidebar chats kept per project (newest), the rest are deleted
-CHAT_MAX_DAYS = 30   # sidebar chats older than this are deleted, even top-4 and archived
+CHAT_KEEP = 3        # sidebar chats kept per project (newest), kept whatever their age
+CHAT_MAX_DAYS = 3    # chats outside the newest CHAT_KEEP (archived included) idle longer are deleted
 RECENT_GRACE = 2 * 3600  # automated runs / empty chats active this recently are left alone
 AUTOMATED_SOURCES = {"cron", "kanban", "oneshot"}  # run records, not chats the user had
 DRY = "--dry-run" in sys.argv
@@ -123,6 +123,43 @@ def channel_threads(cid: str, active: list[dict]) -> list[dict]:
     return threads
 
 
+def _clear_finished_ledgers(sid: str) -> bool:
+    """Drop finished runtime-ledger rows (left by a newer Hermes) for ``sid`` and its compression
+    chain so the delete guard trigger lets the session go. Rows still queued/started/running stay,
+    which keeps the guard in force for live work. Returns True when any row was removed."""
+    with sqlite3.connect(HOME / "state.db", timeout=30) as conn:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if not {"session_admissions", "worker_executions"} <= tables:
+            return False
+        chain = {sid}
+        frontier = [sid]
+        while frontier:  # parents and children linked through parent_session_id
+            cur = frontier.pop()
+            for (other,) in conn.execute(
+                    "SELECT id FROM sessions WHERE parent_session_id = ? "
+                    "UNION SELECT parent_session_id FROM sessions WHERE id = ? AND parent_session_id IS NOT NULL",
+                    (cur, cur)):
+                if other not in chain:
+                    chain.add(other)
+                    frontier.append(other)
+        ph = ",".join("?" * len(chain))
+        ids = tuple(chain)
+        execs = [r[0] for r in conn.execute(
+            f"SELECT execution_id FROM worker_executions WHERE session_id IN ({ph}) "
+            "AND status IN ('terminal','unknown')", ids)]
+        n = 0
+        if execs and "worker_receipts" in tables:
+            eph = ",".join("?" * len(execs))
+            conn.execute(f"DELETE FROM worker_receipts WHERE execution_id IN ({eph})", execs)
+        if execs:
+            eph = ",".join("?" * len(execs))
+            n += conn.execute(f"DELETE FROM worker_executions WHERE execution_id IN ({eph})", execs).rowcount
+        n += conn.execute(
+            f"DELETE FROM session_admissions WHERE target_session_id IN ({ph}) "
+            "AND status IN ('terminal','unknown')", ids).rowcount
+        return n > 0
+
+
 def main() -> None:
     from hermes_state import SessionDB
     from hermes_state_maintenance import _LAST_ACTIVE_SQL, _not_pinned_sql
@@ -173,8 +210,8 @@ def main() -> None:
         lines.append(f"- 디스코드 스레드 삭제 실패: {len(failed)}개 ({', '.join(failed[:10])})"
                      " — 봇 역할에 '스레드 관리' 권한이 필요합니다.")
 
-    # 3. Hermes sidebar cleanup: per group keep the newest CHAT_KEEP visible chats; delete the rest,
-    #    and delete any chat (archived included) idle > CHAT_MAX_DAYS.
+    # 3. Hermes sidebar cleanup: per group keep the newest CHAT_KEEP visible chats; delete any other
+    #    chat (archived included) idle > CHAT_MAX_DAYS.
     chat_cutoff = now - CHAT_MAX_DAYS * 86400
     protected_sessions = {r[0] for r in db._read_all(
         "SELECT id FROM sessions WHERE source = 'discord' AND thread_id IN (%s)" % ",".join("?" * len(keep_ids)),
@@ -195,31 +232,47 @@ def main() -> None:
                 if last < now - RECENT_GRACE:   # recent ones may still be running or just opened
                     doomed.append(sid)          # scheduled-run records and empty chats are never kept
                 continue                        # either way they never take a keep slot
-            if last < chat_cutoff:
-                doomed.append(sid)          # older than CHAT_MAX_DAYS, archived or not
-            elif archived:
-                doomed.append(sid)          # archived and not among the visible newest
+            if archived:
+                if last < chat_cutoff:      # archived chats never take a keep slot
+                    doomed.append(sid)
             else:
                 proj = pdb.project_for_path(pconn, cwd) if cwd else None
                 groups.setdefault(proj.id if proj else "home", []).append((last, sid))
     for items in groups.values():
         items.sort(reverse=True)
-        doomed += [sid for last, sid in items[CHAT_KEEP:]]
+        doomed += [sid for last, sid in items[CHAT_KEEP:] if last < chat_cutoff]
     doomed = [s for s in dict.fromkeys(doomed) if s not in protected_sessions]
     removed, busy = 0, 0
+    busy_reasons: dict[str, int] = {}
     for sid in doomed:
         if DRY:
             removed += 1
             continue
-        try:
-            removed += db.delete_sessions([sid], sessions_dir=HOME / "sessions",
-                                          exclude_active_write_guards=True, include_compression_chain=True) > 0
-        except Exception:
-            busy += 1  # mid-turn or locked: retried on the next run
+        for attempt in (1, 2):
+            try:
+                removed += db.delete_sessions([sid], sessions_dir=HOME / "sessions",
+                                              exclude_active_write_guards=True, include_compression_chain=True) > 0
+                break
+            except sqlite3.IntegrityError as exc:
+                # A newer Hermes (run Oct 14-19) left gateway runtime ledgers plus a delete-guard
+                # trigger in state.db; the current release never clears them, so finished ledger
+                # rows are cleared here and the delete retried once.
+                if attempt == 1 and "runtime history" in str(exc) and _clear_finished_ledgers(sid):
+                    continue
+                reason = str(exc).split(":")[0][:60]
+                busy_reasons[reason] = busy_reasons.get(reason, 0) + 1
+                busy += 1
+                break
+            except Exception as exc:  # mid-turn or locked: retried on the next run
+                reason = f"{type(exc).__name__}: {str(exc)[:60]}"
+                busy_reasons[reason] = busy_reasons.get(reason, 0) + 1
+                busy += 1
+                break
     if removed:
-        lines.append(f"- 왼쪽 채팅 삭제{' 예정' if DRY else ''}: {removed}개 (프로젝트별 최근 {CHAT_KEEP}개 유지, {CHAT_MAX_DAYS}일 경과분 보관 포함 삭제)")
+        lines.append(f"- 왼쪽 채팅 삭제{' 예정' if DRY else ''}: {removed}개 (프로젝트별 최근 {CHAT_KEEP}개 유지, 나머지 중 {CHAT_MAX_DAYS}일 경과분 보관 포함 삭제)")
     if busy:
-        lines.append(f"- 사용 중이라 다음에 삭제: {busy}개")
+        detail = ", ".join(f"{r} {n}개" for r, n in busy_reasons.items())
+        lines.append(f"- 삭제 못 해 다음에 재시도: {busy}개 ({detail})")
 
     if lines:
         print(("[미리보기] " if DRY else "") + "채널·채팅 정리")
