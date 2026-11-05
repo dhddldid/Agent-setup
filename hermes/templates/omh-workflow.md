@@ -1,10 +1,18 @@
-## OMH 워크플로 사용
+## OMH workflow use
 
-Hermes에는 OMH(oh-my-hermes) 플러그인과 스킬(`omh-*`, `ulw-*`)이 설치되어 있다. 대화·한 번에 끝나는 조회를 뺀 모든 작업 요청에 적용한다.
+Before acting on a work request in any language, choose the overall workflow by task shape; make this choice yourself:
+- Use `dag-ulw` for a multi-part job with ordered dependencies or parallel parts.
+- Use `ulw-work` to implement an accepted plan across lanes.
+- Use `ulw-loop` for a long goal requiring repeated research, build, and verification cycles.
+- Use `ulw-plan` or `omh-plan` for an undecided or risky plan.
+- Use `omh-code-review` for a review.
+- Act directly on one small, bounded change.
+Load the chosen workflow with `skill_view` and follow it. Before claiming completion, load and follow `omh-verification-gate`.
 
-- 작업을 시작할 때 요청을 단계(계획, 조사, 구현, 디버깅, 리뷰, QA·검증, 배포, 보고, 운영)로 나누고, 단계마다 맞는 스킬을 고른다. 사용자가 만든 프로젝트·개인 스킬이 그 단계를 다루면 그 스킬을 따르고, 다루지 않는 단계는 맞는 OMH 스킬을 읽고 그 절차를 따른다. 두 스킬이 같은 단계에 맞으면 개인 스킬의 프로젝트 규칙과 OMH 스킬의 절차·검증 기준을 함께 적용한다.
-- 메시지에 OMH Route Hint가 붙으면 그 스킬을 먼저 읽고 맞는지 판단한다.
-- `delegate_task`를 부르기 직전에는 매번 `omh_delegate_route`로 OMH 분류를 정하고 그 결과를 따른다.
-- 세 단계 이상인 작업은 `omh_todo`로 할 일 목록을 만들고 진행에 맞춰 갱신한다.
-- 여러 실행기·하위 작업을 함께 돌리는 작업은 `omh_agent_board`로 진행 상황을 남기고, 끝나면 `omh_run_summary`로 시간·토큰 기록을 보고한다.
-- OMH 스킬이 만든 준비 결과(계획, 위임 지시, 카드)와 실제 실행·검증 결과를 구분해 보고한다.
+- Apply custom and project skills inside the chosen workflow for project rules, accounts, tools, and checks; have each node and lane load the relevant skills.
+- When an OMH Route Hint or skill shortlist appears, load the hinted skill with `skill_view` before the first action; follow it or explain in one line why another workflow fits.
+- Call `omh_delegate_route` immediately before every `delegate_task` and follow its routing result.
+- Use `omh_todo` to record and update work with three or more steps.
+- Use `omh_agent_board` during multi-agent runs and `omh_run_summary` at their close to report recorded time and tokens.
+- Report prepared plans and handoffs separately from observed execution and verification results.
+- Report to the owner in Korean.

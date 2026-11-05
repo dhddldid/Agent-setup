@@ -154,54 +154,29 @@ Hermes에는 Agent-setup이 설치한 구성과 OMH가 설치한 구성이 함�
 | 영역 | Agent-setup에만 | OMH에만 | 둘 다 있을 때 |
 |---|---|---|---|
 | 스킬 | 공식 57·공통·외부 스킬, 작업 중 만든 스킬 (`~/.hermes/skills`) | 워크플로 144개 (`~/.local/share/omh/current/skills`) | 같은 이름이면 `프로젝트 → ~/.hermes/skills → 외부 폴더(OMH)` 순서로 Agent-setup 쪽을 쓴다. 역할만 겹치면 요청에 맞는 쪽을 고른다 |
-| 지침 | `SOUL.md`의 공통 원칙·OMH 워크플로 사용(사용자 스킬이 비는 단계는 OMH, 위임 전 OMH 라우팅)·Aside·문서 전달 | 매 턴 분류 힌트, 프로젝트 `AGENTS.md`의 OMH 구간 | 사용자 지시 → 프로젝트 `AGENTS.md` → 전역 지침 순서. 말투·언어는 `SOUL.md` |
+| 지침 | `SOUL.md`의 공통 원칙·OMH 워크플로 사용(작업 형태로 OMH 흐름을 먼저 고르고 사용자 스킬은 그 안에서 사용, 위임 전 OMH 라우팅)·Aside·문서 전달 | 매 턴 분류 힌트, 프로젝트 `AGENTS.md`의 OMH 구간 | 사용자 지시 → 프로젝트 `AGENTS.md` → 전역 지침 순서. 말투·언어는 `SOUL.md` |
 | 모델 라우팅 | 설치 프리셋, 메인 대화 기본 모델 | 분류별 기본 체인, 실행값 `~/.omh/routing/model-chains.json` | 프리셋을 넣은 분류는 `override`로 OMH 기본값보다 우선하고 업데이트 뒤에도 유지된다. 하위 에이전트에만 적용되고 메인 대화·cron은 Hermes 기본 모델 |
 | 기억 | GAM: 프로젝트 결정·해결 경험 | OMH 기억: Hermes 작업 교훈 | 프로젝트 지식은 GAM에 두어 세 AI가 함께 쓴다 |
 | 코드 탐색·브라우저 | CodeGraph, Aside 조작 규칙 | 색인 갱신·브라우저 범위 안내 워크플로 | 실제 도구는 CodeGraph·Aside, 범위 확인은 OMH 안내를 함께 따른다 |
 | 플러그인·본체 | 사용량 표시·웹 검색 중계, Discord 보고(Discord를 쓰는 사용자만 선택 설치), Hermes 본체·provider-usage 수정 묶음(`hermes/patches/`: 계정 선택·사용량 표시·모델별 계정 쿨다운 등), fallback 호환 패치 | `omh` 플러그인 | 이름이 달라 함께 등록된다. Hermes 본체와 provider-usage는 최신 정식 릴리스 위에 수정 묶음을 적용해 쓰고, `hermes/scripts/apply_local_patches.py`로 적용 상태를 확인한다 |
 | 프로젝트 식별 | 없음 | Git 원격 주소로 프로젝트 자동 식별 | 프로젝트마다 할 초기화는 없다. `omh memory project-identity show`가 `unresolved`인 프로젝트만 `omh memory project-identity init`을 실행한다. OMH 4.0.0에는 `omh init` 명령이 없다 |
-| 업데이트 | 외부 구성요소를 최신 정식 릴리스로 고정, `scripts/check_releases.py`로 확인 | `omh update`가 자기 패키지·스킬 갱신 | [업데이트 절차](hermes/docs/model-routing.md#업데이트) 한 블록으로 함께 올린다 |
+| 업데이트 | `hermes/scripts/update.sh` 한 줄 명령, 외부 구성요소 고정값 확인(`scripts/check_releases.py`) | `omh update`가 자기 패키지·스킬 갱신 | [한 줄 명령](#hermesomh-업데이트)으로 함께 올리고 사용자 지정을 다시 맞춘다 |
 
 ## Hermes·OMH 업데이트
 
-Hermes나 OMH에 새 정식 버전이 나오면 AI가 아래 블록을 그대로 안내한다. 블록은 Hermes(`stable` 채널)와 OMH(`--channel stable --version <최신 태그>`)를 항상 함께 최신 정식 릴리스로 올리고, 이 사용자의 수정 묶음(`hermes/patches/`)을 다시 적용한 뒤 점검·재시작까지 한다. 옵션 없는 `omh update`는 설치 기록이 main 브랜치 zip이면 preview 빌드를 받으므로 쓰지 않는다. 실행 중인 작업이 끝난 뒤 Hermes Desktop을 ⌘Q로 종료하고 터미널에 한 번에 붙여넣는다. `set -e`는 괄호 안에만 적용되어 실패한 단계에서 멈춘다.
+Hermes와 OMH를 최신 정식 릴리스로 올리고 이 사용자의 수정 사항을 다시 맞추는 명령은 하나다. 실행 중인 Hermes 작업이 끝나면 Hermes Desktop을 ⌘Q로 종료하고, 터미널 앱에서 Agent-setup 루트로 이동해 실행한다.
 
 ```bash
-(
-  set -e
-  AGENT_SETUP="$HOME/Downloads/Coding/personal/Agent-setup"   # 이 컴퓨터의 Agent-setup 체크아웃
-
-  printf '\n[1/5] 업데이트 예정 확인\n'
-  hermes update --check
-  hermes update --plan
-
-  printf '\n[2/5] Hermes 백업·업데이트·로컬 수정 재적용\n'
-  hermes update --backup
-
-  printf '\n[3/5] OMH 최신 정식 릴리스로 업데이트\n'
-  OMH_LATEST=$(curl -fsSL https://api.github.com/repos/rlaope/oh-my-hermes/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
-  printf 'OMH %s\n' "$OMH_LATEST"
-  omh update --channel stable --version "$OMH_LATEST"
-
-  printf '\n[4/5] 우리 수정 묶음 확인·설치 상태 점검\n'
-  python3 "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --apply
-  omh doctor
-  hermes doctor
-
-  printf '\n[5/5] 게이트웨이 재시작 및 상태 확인\n'
-  hermes gateway restart
-  hermes gateway status
-  hermes --version
-  omh --version
-
-  printf '\n완료. Hermes Desktop을 다시 켜세요.\n'
-)
+bash hermes/scripts/update.sh
 ```
 
-- AI는 블록 앞에 `hermes update --check`와 OMH 최신 태그로 확인한 현재 → 새 버전을 한 줄로 적는다.
-- 새 Hermes 태그용 패치가 `hermes/patches/hermes-agent/`에 없으면 4단계 `apply_local_patches.py`가 `no_patch`로 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 새 Hermes 버전에 옮겨줘"라고 요청한다.
-- `hermes doctor`의 선택 기능 `⚠`(OpenRouter, image_gen, Docker 등)와 OMH doctor의 `plugin_loader_observed`·`plugin_runtime_observed`는 해결하지 않아도 되는 표시다. `차단` 항목과 실패한 명령만 해결한다.
-- 블록 원본은 [업데이트 절차](hermes/docs/model-routing.md#업데이트)다. 블록을 고칠 때는 두 곳을 함께 고친다.
+- 실행 시점의 최신 정식 버전을 GitHub에서 읽어 Hermes(`hermes update --backup --yes`)와 OMH(`omh update --channel stable --version <최신>`)를 함께 올린다. 버전을 직접 적을 필요가 없다.
+- 업데이트 전후로 모델 체인·Hermes 설정·SOUL 관리 구간·사용자 스킬·한국어 트리거 팩·패치 상태를 비교해 표로 보여주고, Hermes 수정 묶음·호환 패치·SOUL 구간·트리거 팩·provider-usage 표시를 다시 맞춘 뒤 점검과 게이트웨이 재시작까지 한다.
+- 새 Hermes 태그용 수정 묶음이 `hermes/patches/hermes-agent/`에 없으면 아무것도 바꾸기 전에 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 Hermes <태그>에 옮겨줘"라고 요청한 뒤 같은 명령을 다시 실행한다.
+- `--dry-run`은 실행할 단계와 확인한 값만, `--check`는 버전과 사용자 지정 상태만 보여준다.
+- Hermes Desktop의 업데이트 버튼은 Hermes 본체의 로컬 수정을 다시 적용하지 않으므로 쓰지 않는다.
+
+단계별 동작과 멈추는 조건은 [업데이트](hermes/docs/model-routing.md#업데이트), 항목별 유지 방식은 [사용자 지정 항목과 업데이트](hermes/docs/omh-and-agent-setup.md#사용자-지정-항목과-업데이트)에 있다.
 
 ## 저장 데이터 보존
 

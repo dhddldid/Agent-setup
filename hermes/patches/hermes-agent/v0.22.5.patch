@@ -1,0 +1,1937 @@
+diff --git a/agent/auxiliary_client.py b/agent/auxiliary_client.py
+index 88f1fa59b52..bf537467f69 100644
+--- a/agent/auxiliary_client.py
++++ b/agent/auxiliary_client.py
+@@ -1033,13 +1033,13 @@ def _load_pool_with_credentials(provider: str, note: str = "") -> Optional[Any]:
+     return pool if pool and pool.has_credentials() else None
+ 
+ 
+-def _select_pool_entry(provider: str) -> tuple[bool, Optional[Any]]:
++def _select_pool_entry(provider: str, *, model: Optional[str] = None) -> tuple[bool, Optional[Any]]:
+     """Return (pool_exists_for_provider, selected_entry)."""
+     pool = _load_pool_with_credentials(provider)
+     if pool is None:
+         return False, None
+     try:
+-        return True, pool.select()
++        return True, pool.select(model=model) if model else pool.select()
+     except Exception as exc:
+         logger.debug("Auxiliary client: could not select pool entry for %s: %s", provider, exc)
+         return True, None
+@@ -3045,13 +3045,15 @@ def _try_azure_foundry(
+ 
+ 
+ def _try_anthropic(explicit_api_key: Optional[str | Callable[[], str]] = None,
+-                   explicit_base_url: Optional[str] = None) -> tuple[Optional[Any], Optional[str]]:
++                   explicit_base_url: Optional[str] = None,
++                   model: Optional[str] = None) -> tuple[Optional[Any], Optional[str]]:
+     try:
+         from agent.anthropic_adapter import build_anthropic_client
+         from agent.anthropic_credentials import resolve_anthropic_token
+     except ImportError:
+         return None, None
+-    pool_present, entry = _select_pool_entry("anthropic")
++    model = _normalize_resolved_model(model, "anthropic") or _get_aux_model_for_provider("anthropic") or "claude-haiku-4-5-20251001"
++    pool_present, entry = _select_pool_entry("anthropic", model=model)
+     if pool_present and entry is not None:
+         token = explicit_api_key or _pool_runtime_api_key(entry)
+     else:
+@@ -3090,7 +3092,6 @@ def _try_anthropic(explicit_api_key: Optional[str | Callable[[], str]] = None,
+         base_url = override_url
+     from agent.anthropic_credentials import _is_oauth_token
+     is_oauth = _is_oauth_token(token)
+-    model = _get_aux_model_for_provider("anthropic") or "claude-haiku-4-5-20251001"
+     if _aux_probe_active():
+         # Probe: token + adapter import resolved; skip real client construction.
+         return _AuxProbeClientStub(api_key="", base_url=base_url), model
+@@ -3709,7 +3710,9 @@ def _recoverable_pool_provider(
+     return None
+ 
+ 
+-def _recover_provider_pool(provider: str, exc: Exception, *, failed_api_key: str = "") -> bool:
++def _recover_provider_pool(
++    provider: str, exc: Exception, *, failed_api_key: str = "", model: Optional[str] = None,
++) -> bool:
+     """Try same-provider credential-pool recovery for auxiliary calls.
+ 
+     ``failed_api_key`` lets mark_exhausted_and_rotate identify the right pool entry even if
+@@ -3726,12 +3729,18 @@ def _recover_provider_pool(provider: str, exc: Exception, *, failed_api_key: str
+     status_code = getattr(exc, "status_code", None)
+ 
+     def _rotate(fallback_status: int) -> bool:
+-        error_context: dict[str, Any] = {"message": str(exc)}
++        from agent.error_classifier import classify_api_error
++
++        # Keep server reset windows (including Retry-After), not just the error text.
++        error_context = dict(classify_api_error(exc, provider=normalized, model=model or "").error_context)
++        error_context["message"] = str(exc)
+         if status_code is not None:
+             error_context["status_code"] = status_code
+         next_entry = pool.mark_exhausted_and_rotate(
+             status_code=status_code if status_code is not None else fallback_status,
+             error_context=error_context, api_key_hint=failed_api_key or None,
++            # Payment-flavoured 429s still bench the whole credential.
++            model=None if fallback_status == 402 else model,
+         )
+         if next_entry is None:
+             return False
+@@ -3758,6 +3767,7 @@ def _prepare_same_provider_retry(
+     max_tokens: Optional[int], tools: Optional[list], effective_timeout: float,
+     effective_extra_body: dict, reasoning_config: Optional[dict], async_mode: bool,
+     extra_headers: Optional[dict[str, str]] = None,
++    recovery_context: Optional[dict[str, Any]] = None,
+ ) -> tuple[Any, dict[str, Any]]:
+     """Rebuild (client, request kwargs) for a same-provider retry after credential recovery."""
+     if task == "vision":
+@@ -3767,7 +3777,7 @@ def _prepare_same_provider_retry(
+         )
+     else:
+         retry_client, retry_model = _get_cached_client(
+-            resolved_provider, resolved_model, async_mode=async_mode, base_url=resolved_base_url,
++            resolved_provider, final_model or resolved_model, async_mode=async_mode, base_url=resolved_base_url,
+             api_key=resolved_api_key, api_mode=resolved_api_mode, main_runtime=main_runtime,
+         )
+         effective_provider = _effective_provider_for_client(retry_client, resolved_provider)
+@@ -3791,6 +3801,8 @@ def _prepare_same_provider_retry(
+         retry_kwargs["extra_headers"] = dict(extra_headers)
+     if _is_anthropic_compat_endpoint(resolved_provider, retry_base):
+         retry_kwargs["messages"] = _convert_openai_images_to_anthropic(retry_kwargs["messages"])
++    if recovery_context is not None:
++        recovery_context.update(model=retry_kwargs.get("model"), api_key=str(getattr(retry_client, "api_key", "") or ""))
+     return retry_client, retry_kwargs
+ 
+ 
+@@ -5270,7 +5282,7 @@ def _resolve_api_key_branch(req: _ResolveRequest, pconfig: Any, resolve_creds: C
+     provider = req.provider
+     if provider == "anthropic":
+         client, default_model = _try_anthropic(explicit_api_key=req.explicit_api_key,
+-                                               explicit_base_url=req.explicit_base_url)
++                                               explicit_base_url=req.explicit_base_url, model=req.model)
+         return _route_or_warn(req, client, default_model,
+                               "resolve_provider_client: anthropic requested but no Anthropic credentials found")
+     creds = resolve_creds(provider)
+@@ -5550,7 +5562,7 @@ _STRICT_VISION_BACKENDS: dict[str, Callable[[Optional[str]], tuple[Optional[Any]
+     "openrouter": lambda model: _try_openrouter(model=model),
+     "nous": lambda model: resolve_provider_client("nous", model, is_vision=True),
+     "openai-codex": lambda model: resolve_provider_client("openai-codex", model, is_vision=True),
+-    "anthropic": lambda model: _try_anthropic(),
++    "anthropic": lambda model: _try_anthropic(model=model),
+     "deepinfra": _deepinfra_strict_vision_backend,
+     "custom": lambda model: _try_custom_endpoint(),
+ }
+@@ -7533,6 +7545,7 @@ class _LadderStep(NamedTuple):
+     "retry_same_provider" (provider, model) | "fallback" (fb_client, fb_model, fb_label)."""
+     kind: str
+     args: tuple
++    recovery_context: Optional[dict[str, Any]] = None
+ 
+ 
+ # Ordered (predicate, reason) pairs for the provider-fallback rung: first match
+@@ -7747,6 +7760,10 @@ def _ladder_credential_rungs(
+     client, task, tag, resolved_provider = route.client, route.task, route.tag, route.resolved_provider
+     auth_refresh_provider = _auth_refresh_provider_for_route(
+         resolved_provider, route.base_info, _effective_provider_for_client(client, ""))
++    recovery_context = {
++        "model": kwargs.get("model") or route.final_model or route.resolved_model,
++        "api_key": str(getattr(client, "api_key", "") or ""),
++    }
+     if (_is_auth_error(first_err) and auth_refresh_provider not in {"auto", "", None}
+             and not client_is_nous):
+         refresh_kwargs = ({"failed_api_key": getattr(client, "api_key", "")}
+@@ -7760,7 +7777,7 @@ def _ladder_credential_rungs(
+                         task or "call", tag, auth_refresh_provider)
+             step = _LadderStep(
+                 "retry_same_provider",
+-                (auth_refresh_provider, route.resolved_model or route.final_model))
++                (auth_refresh_provider, recovery_context["model"]))
+             resp, first_err = yield from _rung(
+                 step, lambda exc: _credential_rung_accepts(exc) or _is_connection_error(exc))
+             if first_err is None:
+@@ -7772,7 +7789,7 @@ def _ladder_credential_rungs(
+     pool_provider = _recoverable_pool_provider(resolved_provider, client, main_runtime=route.main_runtime)
+     # Capture the exact key used so recovery finds the right pool entry even if another
+     # process rotated the pool meanwhile (current() would be None).
+-    _client_api_key = str(getattr(client, "api_key", "") or "")
++    _client_api_key = recovery_context["api_key"]
+     # Gate on the narrowed error: a connection failure from the retry above arrives here
+     # unaccepted on purpose (a fresh key cannot fix an unreachable endpoint), so rotation
+     # is skipped and ``first_err`` is handed to the provider-fallback chain as-is.
+@@ -7785,18 +7802,23 @@ def _ladder_credential_rungs(
+                 _LadderStep("call", (client, kwargs)), _credential_rung_accepts)
+             if recovery_err is None:
+                 return resp, None
+-        if _recover_provider_pool(pool_provider, recovery_err, failed_api_key=_client_api_key):
++        if _recover_provider_pool(
++            pool_provider, recovery_err, failed_api_key=_client_api_key, model=recovery_context["model"],
++        ):
+             logger.info("Auxiliary %s%s: recovered %s via credential-pool rotation after %s",
+                         task or "call", tag, pool_provider, type(recovery_err).__name__)
+             try:
+                 return (yield _LadderStep(
+-                    "retry_same_provider", (resolved_provider, route.resolved_model))), None
++                    "retry_same_provider", (resolved_provider, recovery_context["model"]), recovery_context)), None
+             except Exception as retry2_err:
+                 # Rotated key also hit a wall: mark it now so concurrent processes skip it,
+                 # then fall through to the provider fallback.
+                 if (_is_payment_error(retry2_err) or _is_auth_error(retry2_err)
+                         or _is_rate_limit_error(retry2_err)):
+-                    _recover_provider_pool(pool_provider, retry2_err)
++                    _recover_provider_pool(
++                        pool_provider, retry2_err, failed_api_key=recovery_context["api_key"],
++                        model=recovery_context["model"],
++                    )
+                     first_err = retry2_err
+                 else:
+                     raise
+@@ -8130,7 +8152,10 @@ def _ladder_step_call(
+         return "call", step.args, dict(provider=req.resolved_provider, api_mode=req.resolved_api_mode)
+     if step.kind == "retry_same_provider":
+         retry_provider, retry_model = step.args
+-        return "retry", (), dict(retry_kwargs, resolved_provider=retry_provider, resolved_model=retry_model)
++        kw = dict(retry_kwargs, resolved_provider=retry_provider, resolved_model=retry_model)
++        if step.recovery_context is not None:
++            kw["recovery_context"] = step.recovery_context
++        return "retry", (), kw
+     return "fallback", step.args, candidate_kwargs
+ 
+ 
+diff --git a/agent/turn_recovery.py b/agent/turn_recovery.py
+index ffd197d0ad0..4bd18990631 100644
+--- a/agent/turn_recovery.py
++++ b/agent/turn_recovery.py
+@@ -1938,7 +1938,8 @@ def route_classified_error(
+         # Fixes #11314.
+         _is_upstream = classified.reason == FailoverReason.upstream_rate_limit
+         pool_may_recover = (
+-            False if _is_upstream else _ra()._pool_may_recover_from_rate_limit(agent._credential_pool)
++            False if _is_upstream
++            else _ra()._pool_may_recover_from_rate_limit(agent._credential_pool, getattr(agent, "model", None))
+         )
+         if not pool_may_recover:
+             agent._buffer_diagnostic_status(_eager_fallback_status(classified, _is_upstream, _is_transport_failure))
+diff --git a/gateway/run.py b/gateway/run.py
+index 2db32d7fea6..fa97500ebb4 100644
+--- a/gateway/run.py
++++ b/gateway/run.py
+@@ -2298,10 +2298,10 @@ _CONVERSATION_SCOPED_STATE: tuple = (
+ 
+ 
+ def _resolve_runtime_agent_kwargs() -> dict:
+-    """Resolve provider credentials for gateway-created AIAgent instances.
+-    ``resolve_runtime_provider()`` may fall back to env vars; behavioral config is config.yaml only.
+-    An ``AuthError`` from the primary walks the configured fallback chain through the shared
+-    ``resolve_runtime_with_fallback`` (the gateway keeps no resolver loop of its own)."""
++    """Resolve provider credentials for gateway-created AIAgent instances (env-var fallback; behaviour
++    from config.yaml). The primary resolves for its configured model: an unscoped pool selection honours
++    every model's cooldown, so a sibling model's rate limit would block it. An ``AuthError`` walks the
++    fallback chain through the shared ``resolve_runtime_with_fallback`` (no gateway-private loop)."""
+     from hermes_cli.runtime_provider import (
+         resolve_runtime_with_fallback, format_runtime_provider_error, _get_model_config)
+ 
+@@ -2312,7 +2312,7 @@ def _resolve_runtime_agent_kwargs() -> dict:
+     _primary_provider = (_model_cfg.get("provider") or "").strip()
+ 
+     try:
+-        runtime, fallback_entry = resolve_runtime_with_fallback(_load_gateway_config())
++        runtime, fallback_entry = resolve_runtime_with_fallback(_load_gateway_config(), target_model=_primary_model or None)
+     except Exception as exc:
+         raise RuntimeError(format_runtime_provider_error(exc)) from exc
+ 
+diff --git a/hermes_cli/_parser.py b/hermes_cli/_parser.py
+index 357d1eba59d..38cc9920e8a 100644
+--- a/hermes_cli/_parser.py
++++ b/hermes_cli/_parser.py
+@@ -105,6 +105,7 @@ Examples:
+     hermes auth remove <p> <t>    Remove pooled credential by index, id, or label
+     hermes auth reset <p> [t]     Clear exhaustion status for a provider, or one credential
+     hermes auth priority <p> <t> <n>  Move a pooled credential to priority n (0 = tried first)
++    hermes auth select <p> <t>    Select work-first + usage display (--scope work|usage|both)
+     hermes auth refresh <p> [t]   Refresh a pooled OAuth credential and clear its cooldown
+     hermes model                  Select default model
+     hermes fallback [list]        Show fallback provider chain
+diff --git a/hermes_cli/auth.py b/hermes_cli/auth.py
+index 41ab3ad14ba..f7414cadbe4 100644
+--- a/hermes_cli/auth.py
++++ b/hermes_cli/auth.py
+@@ -2475,6 +2475,9 @@ def logout_command(args) -> None:
+     if not (clear_provider_auth(target) or should_reset_config):
+         print(f"No auth state found for {provider_name}.")
+         return
++    if target in ("anthropic", "openai-codex"):
++        from hermes_cli.auth_usage_selection import clear_usage_login_selection
++        clear_usage_login_selection(target)
+     if target == "nous":
+         # A profile logout must not be re-adopted from the cross-profile store on the next boot.
+         from hermes_cli.auth_nous import _clear_shared_nous_state
+diff --git a/hermes_cli/auth_codex.py b/hermes_cli/auth_codex.py
+index 257b43145ca..87b13077b97 100644
+--- a/hermes_cli/auth_codex.py
++++ b/hermes_cli/auth_codex.py
+@@ -964,6 +964,7 @@ def _login_openai_codex(args, pconfig: ProviderConfig, *, force_new_login: bool
+             if _prompt_yes_no(
+                 "Import these credentials? (a separate login is recommended) [y/N]: ", default="n"):
+                 _save_codex_tokens(cli_tokens)
++                _record_codex_singleton_login("cli")
+                 config_path = _update_config_for_provider("openai-codex", _codex_base_url())
+                 print()
+                 print("Credentials imported. Note: if Codex CLI refreshes its token,")
+@@ -976,11 +977,18 @@ def _login_openai_codex(args, pconfig: ProviderConfig, *, force_new_login: bool
+     print()
+     creds = codex_oauth_login(args)
+     _save_codex_tokens(creds["tokens"], creds.get("last_refresh"))
++    _record_codex_singleton_login("cli")
+     config_path = _update_config_for_provider(
+         "openai-codex", creds.get("base_url", DEFAULT_CODEX_BASE_URL))
+     _print_login_success("openai-codex", config_path, show_auth_state=True)
+ 
+ 
++def _record_codex_singleton_login(surface: str) -> None:
++    """Stamp the usage-display pointer after an explicit Codex singleton login (not a refresh)."""
++    from hermes_cli.auth_usage_selection import record_singleton_login_selection
++    record_singleton_login_selection("openai-codex", surface=surface)
++
++
+ def _codex_login_rate_limited_error(response: httpx.Response, *, during: str = "") -> AuthError:
+     """AuthError for a 429 from OpenAI's device-auth endpoints (throttle, not credential fault)."""
+     # Upstream rate-limit / usage-quota exhaustion on the token endpoint. The stored refresh token is still
+diff --git a/hermes_cli/auth_commands.py b/hermes_cli/auth_commands.py
+index 592c6dfdb0b..058bc5bdf9e 100644
+--- a/hermes_cli/auth_commands.py
++++ b/hermes_cli/auth_commands.py
+@@ -21,6 +21,7 @@ from agent.credential_pool import (
+ from agent.credential_pool_admin import CredentialNotSavedError
+ import hermes_cli.auth as auth_mod
+ from hermes_cli.auth import PROVIDER_REGISTRY
++from hermes_cli.auth_select import auth_select_command
+ from hermes_cli.auth_plugin_providers import (
+     dispatch_plugin_auth, is_refreshable_oauth_provider, plugin_missing_auth_handler_error)
+ from hermes_constants import OPENROUTER_BASE_URL
+@@ -416,6 +417,11 @@ def auth_add_command(args) -> None:
+         raise SystemExit(f"Login failed: {auth_mod.format_auth_error(exc)}") from exc
+     except CredentialNotSavedError as exc:
+         raise SystemExit(str(exc)) from exc
++    if entry is not None:
++        # Usage-display pointer only (inference order is untouched): this explicit login is the
++        # account the user means when they ask "what is my quota".
++        from hermes_cli.auth_usage_selection import record_pool_entry_login_selection
++        record_pool_entry_login_selection(provider, entry, surface="cli")
+     if wanted_priority is not None:
+         placed_pool = load_pool(provider)
+         moved = placed_pool.move_entry(entry.id, int(wanted_priority))
+@@ -533,6 +539,8 @@ def auth_list_command(args) -> None:
+         if not entries:
+             continue
+         current = pool.peek()
++        from hermes_cli.auth_usage_selection import get_usage_login_selection
++        usage_choice = get_usage_login_selection(provider) or {}
+         if provider == "nous" and all(_is_free_tier_entry(e) for e in entries):
+             # The free tier is not a credential the user added; never list it as one.
+             label, hint = _free_tier_lines()
+@@ -545,9 +553,16 @@ def auth_list_command(args) -> None:
+             marker = "← " if current is not None and entry.id == current.id else "  "
+             status = _format_exhausted_status(entry)
+             source = _display_source(entry.source)
++            email_label = entry.extra.get("account_email") or entry.label
++            selected = []
++            if entry.priority == 0:
++                selected.append("work-first")
++            if usage_choice.get("credential_id") == entry.id:
++                selected.append("usage")
++            suffix = " [" + ", ".join(selected) + "]" if selected else ""
+             row = (
+-                f"  #{idx}  {entry.label:<20} {entry.auth_type:<7} "
+-                f"id={entry.id} priority={entry.priority} {source}{status} {marker}"
++                f"  #{idx}  {email_label:<20} {entry.auth_type:<7} "
++                f"id={entry.id} priority={entry.priority} {source}{status} {marker}{suffix}"
+             )
+             print(row.rstrip())
+         print()
+@@ -583,6 +598,8 @@ def auth_remove_command(args) -> None:
+     if removed is None:
+         raise SystemExit(f'No credential matching "{target}" for provider {provider}.')
+     print(f"Removed {provider} credential #{index} ({removed.label})")
++    from hermes_cli.auth_usage_selection import clear_usage_login_selection
++    clear_usage_login_selection(provider, credential_id=removed.id)
+ 
+     # Every credential source Hermes reads from (env vars, external OAuth files, auth.json blocks,
+     # custom config) has a RemovalStep in agent.credential_sources; it does the source-specific
+@@ -911,6 +928,7 @@ def auth_upgrade_command(args) -> None:
+ 
+ 
+ _AUTH_ACTIONS = {
++    "select": auth_select_command,
+     "add": auth_add_command, "list": auth_list_command, "remove": auth_remove_command,
+     "reset": auth_reset_command, "priority": auth_priority_command, "refresh": auth_refresh_command, "status": auth_status_command,
+     "logout": auth_logout_command, "upgrade": auth_upgrade_command}
+diff --git a/hermes_cli/auth_select.py b/hermes_cli/auth_select.py
+new file mode 100644
+index 00000000000..b4a7298ca51
+--- /dev/null
++++ b/hermes_cli/auth_select.py
+@@ -0,0 +1,48 @@
++"""Explicit selection of a stored credential for work and usage display."""
++from dataclasses import replace
++
++from agent.credential_pool import load_pool, get_pool_strategy, STRATEGY_FILL_FIRST
++from hermes_cli import auth as auth_mod
++from hermes_cli.auth_usage_selection import USAGE_LOGIN_SELECTION_KEY, account_email_from_label
++
++
++def auth_select_command(args) -> None:
++    provider = str(args.provider).strip().lower()
++    scope = getattr(args, "scope", "both")
++    pool = load_pool(provider)
++    _, matched, error = pool.resolve_target(args.target)
++    if matched is None:
++        raise SystemExit(f"{error} Provider: {provider}.")
++    if scope in {"work", "both"} and get_pool_strategy(provider) != STRATEGY_FILL_FIRST:
++        raise SystemExit(f"Work selection requires fill_first for {provider}.")
++    if scope in {"usage", "both"} and (provider != "anthropic" or matched.auth_type != "oauth"):
++        raise SystemExit("Usage selection requires a stored Anthropic OAuth credential.")
++    with auth_mod._auth_store_lock():
++        store = auth_mod._load_auth_store()
++        rows = (store.get("credential_pool") or {}).get(provider) or []
++        target = next((r for r in rows if r.get("id") == matched.id), None)
++        if target is None:
++            raise SystemExit("Select a credential owned by the active profile; list credentials again.")
++        email = target.get("account_email") or account_email_from_label(target.get("label"))
++        if scope in {"work", "both"}:
++            ordered = sorted(rows, key=lambda r: r.get("priority", 0))
++            ordered = [target] + [r for r in ordered if r["id"] != matched.id]
++            from agent.credential_pool import PooledCredential, _normalize_pool_priorities
++            entries = [replace(PooledCredential.from_dict(provider, row), priority=i)
++                       for i, row in enumerate(ordered)]
++            _normalize_pool_priorities(provider, entries)
++            if next(e.priority for e in entries if e.id == matched.id) != 0:
++                raise SystemExit("Choose a manually stored credential to set work priority 0.")
++            store["credential_pool"][provider] = [e.to_dict() for e in sorted(entries, key=lambda e: e.priority)]
++        if scope in {"usage", "both"}:
++            choice = {"credential_id": matched.id, "selected_at": auth_mod._utc_now_z(),
++                      "surface": "cli-selection", "source": matched.source}
++            if email:
++                choice["account_email"] = email
++            auth_mod._store_section(store, USAGE_LOGIN_SELECTION_KEY)[provider] = choice
++        auth_mod._save_auth_store(store)
++    print(f"Selected {provider}: {email or matched.label} (id={matched.id}, scope={scope})")
++    if scope in {"work", "both"}:
++        print("Work priority: 0. New credential resolution uses this order; active requests retain their credential.")
++    if scope in {"usage", "both"}:
++        print("Usage display selection saved. Refresh the usage panel to read the selected account.")
+diff --git a/hermes_cli/auth_usage_selection.py b/hermes_cli/auth_usage_selection.py
+new file mode 100644
+index 00000000000..3f9eb7d61a7
+--- /dev/null
++++ b/hermes_cli/auth_usage_selection.py
+@@ -0,0 +1,264 @@
++"""Explicit login or account selection for the usage display (``usage_login_selection``).
++
++The inference pool orders credentials by priority / strategy / cooldowns; the usage display
++must instead show the account the user logged into LAST. Those are different questions, so this
++module keeps a separate, tiny pointer per provider in ``auth.json``::
++
++    "usage_login_selection": {
++        "anthropic": {"credential_id": "2e8412", "login_at": "2026-10-10T01:02:03Z",
++                      "account_email": "...", "surface": "cli"}
++    }
++
++Contract:
++
++* ``record_usage_login_selection`` is called ONLY from an explicit, successful login path (CLI
++  ``hermes auth add``, the ``hermes model``/``hermes setup`` Codex login, the Desktop native login
++  routes). A re-login of the same or a different account replaces the pointer. Nothing else moves
++  it: automatic token refresh, pool rewrites, cooldowns, priority changes and usage polling are
++  all invisible here — none of them is a login.
++* Reads never guess. There is no "latest entry", mtime, priority or ``last_refresh`` fallback: an
++  install with no recorded login gets ``None`` and the caller shows that honestly.
++* ``hermes auth select`` can explicitly select a saved credential through the same pointer.
++  It records ``selected_at``; ``login_at`` is reserved for successful login events.
++* Only public selection ids and account metadata are stored, never token material. Writes go
++  through the auth-store lock + atomic 0600 save; a validation failure leaves the store untouched.
++* Profile scoping follows ``read_credential_pool``: the active profile's store is authoritative,
++  and the global root's pointer is visible only while the profile borrows the global pool for
++  that provider (zero own rows).
++"""
++
++from __future__ import annotations
++
++import logging
++import re
++from typing import Any, Optional
++
++from hermes_cli.auth import (
++    _auth_store_lock,
++    _load_auth_store,
++    _load_global_auth_store,
++    _save_auth_store,
++    _store_section,
++    _utc_now_z,
++    read_credential_pool,
++)
++
++logger = logging.getLogger(__name__)
++
++USAGE_LOGIN_SELECTION_KEY = "usage_login_selection"
++
++# Pool ids are ``uuid4().hex[:6]``; legacy/manual ids may be longer or carry ``-``/``_``.
++_CREDENTIAL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
++_METADATA_KEYS = frozenset({"account_email", "account_label", "surface", "source"})
++_FORBIDDEN_FRAGMENTS = ("token", "secret", "key", "password", "credential")
++_MAX_METADATA_LEN = 256
++_REDACTED_ENTRY_FIELDS = ("id", "label", "source", "auth_type", "priority")
++
++
++def _normalize_provider(provider: str) -> str:
++    normalized = (provider or "").strip().lower()
++    if not normalized:
++        raise ValueError("provider is required")
++    return normalized
++
++
++def _validate_credential_id(credential_id: Any) -> str:
++    if not isinstance(credential_id, str) or not _CREDENTIAL_ID_RE.match(credential_id.strip()):
++        raise ValueError("credential_id must be a short public pool id (letters, digits, . _ -)")
++    return credential_id.strip()
++
++
++def _validate_metadata(metadata: dict[str, Any]) -> dict[str, str]:
++    cleaned: dict[str, str] = {}
++    for key, value in metadata.items():
++        if key not in _METADATA_KEYS or any(fragment in key.lower() for fragment in _FORBIDDEN_FRAGMENTS):
++            raise ValueError(f"unsupported selection metadata field: {key!r}")
++        if value is None:
++            continue
++        if not isinstance(value, str):
++            raise ValueError(f"selection metadata {key!r} must be a string")
++        value = value.strip()
++        if not value:
++            continue
++        if len(value) > _MAX_METADATA_LEN:
++            raise ValueError(f"selection metadata {key!r} is too long")
++        cleaned[key] = value
++    return cleaned
++
++
++def _selection_in(store: dict[str, Any], provider: str) -> Optional[dict[str, Any]]:
++    section = store.get(USAGE_LOGIN_SELECTION_KEY) if isinstance(store, dict) else None
++    row = section.get(provider) if isinstance(section, dict) else None
++    if not isinstance(row, dict):
++        return None
++    credential_id = row.get("credential_id")
++    if not isinstance(credential_id, str) or not credential_id:
++        return None
++    return dict(row)
++
++
++def _profile_has_own_rows(store: dict[str, Any], provider: str) -> bool:
++    pool = store.get("credential_pool") if isinstance(store, dict) else None
++    rows = pool.get(provider) if isinstance(pool, dict) else None
++    return isinstance(rows, list) and bool(rows)
++
++
++def get_usage_login_selection(provider: str) -> Optional[dict[str, Any]]:
++    """The current explicit display selection for *provider*, or ``None`` when unset.
++
++    Returns the credential id and explicit login/selection timestamp plus public account metadata.
++    Never contains token material. Never infers a selection from pool order, priority, mtime or
++    refresh timestamps.
++    """
++    provider = _normalize_provider(provider)
++    store = _load_auth_store()
++    own = _selection_in(store, provider)
++    if provider in (store.get(USAGE_LOGIN_SELECTION_KEY) or {}):
++        return own  # local logout keeps the profile display logged out
++    if _profile_has_own_rows(store, provider):
++        return None  # the profile owns this provider: the global pointer is not its login
++    return _selection_in(_load_global_auth_store(), provider)
++
++
++def usage_login_selection_was_recorded(provider: str) -> bool:
++    """A saved login/clear marker prevents legacy account substitution."""
++    provider = _normalize_provider(provider)
++    store = _load_auth_store()
++    if provider in (store.get(USAGE_LOGIN_SELECTION_KEY) or {}):
++        return True
++    if _profile_has_own_rows(store, provider):
++        return False
++    return provider in (_load_global_auth_store().get(USAGE_LOGIN_SELECTION_KEY) or {})
++
++
++def record_usage_login_selection(
++    provider: str, credential_id: str, *, login_at: Optional[str] = None, **metadata: Any,
++) -> dict[str, Any]:
++    """Point the usage display at *credential_id* after an explicit, successful login.
++
++    ``metadata`` accepts ``account_email``, ``account_label``, ``surface`` (``cli``/``desktop``/
++    ``migration``) and ``source``; anything else — in particular anything token-like — raises
++    ``ValueError`` before the store is touched. Returns the stored selection.
++    """
++    provider = _normalize_provider(provider)
++    credential_id = _validate_credential_id(credential_id)
++    cleaned = _validate_metadata(metadata)
++    selection: dict[str, Any] = {"credential_id": credential_id, "login_at": login_at or _utc_now_z(), **cleaned}
++    with _auth_store_lock():
++        store = _load_auth_store()
++        _store_section(store, USAGE_LOGIN_SELECTION_KEY)[provider] = dict(selection)
++        _save_auth_store(store)
++    logger.info("usage login selection for %s -> credential %s (%s)", provider, credential_id,
++                cleaned.get("surface") or "unspecified surface")
++    return selection
++
++
++def clear_usage_login_selection(provider: str, *, credential_id: Optional[str] = None) -> bool:
++    """Drop the pointer for *provider*; with *credential_id* only when it names that credential
++    (the ``hermes auth remove`` / Desktop DELETE hook). Returns whether anything was removed."""
++    provider = _normalize_provider(provider)
++    with _auth_store_lock():
++        store = _load_auth_store()
++        current = get_usage_login_selection(provider)
++        if current is None or (credential_id is not None and current["credential_id"] != credential_id):
++            return False
++        _store_section(store, USAGE_LOGIN_SELECTION_KEY)[provider] = {"cleared_at": _utc_now_z()}
++        _save_auth_store(store)
++    return True
++
++
++def _redacted(row: Any) -> dict[str, Any]:
++    getter = row.get if isinstance(row, dict) else lambda field, default=None: getattr(row, field, default)
++    return {field: getter(field) for field in _REDACTED_ENTRY_FIELDS}
++
++
++def _is_seeded_source(source: Any) -> bool:
++    """Singleton-seeded rows (``device_code``, ``hermes_pkce``, ...) are unique per source by
++    construction (``_upsert_entry`` dedupes on it); ``manual*`` rows are not."""
++    return isinstance(source, str) and bool(source) and not source.startswith("manual")
++
++
++def resolve_usage_login_entry(provider: str) -> Optional[dict[str, Any]]:
++    """The pool row the recorded selection names, REDACTED (id, label, source, auth_type,
++    priority), or ``None`` when nothing is recorded or the row left the pool.
++
++    A selection recorded from a singleton login also carries its seeded ``source``; when the id is
++    not on disk (a named profile borrowing the root pool never materializes its own seeded row, so
++    that row's id is regenerated per load) the unique row with that source is the same credential.
++    """
++    provider = _normalize_provider(provider)
++    selection = get_usage_login_selection(provider)
++    if selection is None:
++        return None
++    for row in read_credential_pool(provider):
++        if isinstance(row, dict) and row.get("id") == selection["credential_id"]:
++            return _redacted(row)
++    source = selection.get("source")
++    if not _is_seeded_source(source):
++        return None
++    from agent.credential_pool import load_pool
++    entry = next((e for e in load_pool(provider).entries() if e.source == source), None)
++    return _redacted(entry) if entry is not None else None
++
++
++def seed_usage_login_selection_if_absent(
++    provider: str, credential_id: str, **metadata: Any,
++) -> Optional[dict[str, Any]]:
++    """One-time explicit migration: record *credential_id* only when NO selection exists yet AND
++    the id is a row of the provider's pool. The caller supplies the id from verified evidence;
++    this function never derives one. Returns the stored selection, or ``None`` when skipped."""
++    provider = _normalize_provider(provider)
++    credential_id = _validate_credential_id(credential_id)
++    if get_usage_login_selection(provider) is not None:
++        return None
++    if not any(isinstance(r, dict) and r.get("id") == credential_id for r in read_credential_pool(provider)):
++        return None
++    cleaned = _validate_metadata({"surface": "migration", **metadata})
++    with _auth_store_lock():
++        if usage_login_selection_was_recorded(provider):
++            return None
++        store = _load_auth_store()
++        selection = {"credential_id": credential_id, "login_at": _utc_now_z(), **cleaned}
++        _store_section(store, USAGE_LOGIN_SELECTION_KEY)[provider] = selection
++        _save_auth_store(store)
++    return dict(selection)
++
++
++def account_email_from_label(label: Any) -> Optional[str]:
++    """A pool label is the token's e-mail claim when one exists; pass it through as account metadata."""
++    return label.strip() if isinstance(label, str) and "@" in label else None
++
++
++def record_pool_entry_login_selection(provider: str, entry: Any, *, surface: str) -> Optional[dict[str, Any]]:
++    """Record a just-added ``PooledCredential`` as the last login. Failures are logged, never raised:
++    the credential IS saved at this point and a metadata hiccup must not fail the login."""
++    try:
++        return record_usage_login_selection(
++            provider, entry.id, surface=surface, source=getattr(entry, "source", None),
++            account_email=account_email_from_label(getattr(entry, "label", None)))
++    except Exception:
++        logger.warning("could not record usage login selection for %s", provider, exc_info=True)
++        return None
++
++
++def record_singleton_login_selection(
++    provider: str, *, surface: str, source: str = "device_code",
++) -> Optional[dict[str, Any]]:
++    """Record the pool row seeded from a provider's ``providers.<id>`` singleton as the last login.
++
++    ``hermes model``/``hermes setup`` and the Desktop device-code route save the Codex/xAI
++    singleton; ``load_pool`` surfaces it as the ``device_code`` row whose id is stable across
++    re-logins. Returns ``None`` (without raising) when no such row exists.
++    """
++    try:
++        from agent.credential_pool import load_pool
++        provider = _normalize_provider(provider)
++        entry = next((e for e in load_pool(provider).entries() if e.source == source), None)
++        if entry is None:
++            return None
++        return record_usage_login_selection(
++            provider, entry.id, surface=surface, source=source,
++            account_email=account_email_from_label(entry.label))
++    except Exception:
++        logger.warning("could not record singleton usage login selection for %s", provider, exc_info=True)
++        return None
+diff --git a/hermes_cli/subcommands/auth.py b/hermes_cli/subcommands/auth.py
+index 22574cd2f80..5275c3f91e0 100644
+--- a/hermes_cli/subcommands/auth.py
++++ b/hermes_cli/subcommands/auth.py
+@@ -53,6 +53,12 @@ def build_auth_parser(subparsers, *, cmd_auth: Callable) -> None:
+     auth_priority.add_argument("provider", help="Provider id")
+     auth_priority.add_argument("target", help="Credential index, entry id, or exact label")
+     auth_priority.add_argument("priority", type=int, help="New priority; others are renumbered")
++    auth_select = auth_subparsers.add_parser(
++        "select", help="Select a stored credential for work priority and usage display")
++    auth_select.add_argument("provider", help="Provider id")
++    auth_select.add_argument("target", help="Credential index, entry id, or exact label")
++    auth_select.add_argument("--scope", choices=["both", "work", "usage"], default="both",
++                             help="Select both (default), work priority only, or usage display only")
+     auth_refresh = auth_subparsers.add_parser(
+         "refresh", help="Refresh a pooled OAuth credential's tokens and clear its cooldown")
+     auth_refresh.add_argument("provider", help="Provider id")
+diff --git a/hermes_cli/tools_config_post_setup.py b/hermes_cli/tools_config_post_setup.py
+index d71154e6e3e..c249bfc068d 100644
+--- a/hermes_cli/tools_config_post_setup.py
++++ b/hermes_cli/tools_config_post_setup.py
+@@ -251,6 +251,9 @@ def _post_setup_openai_codex() -> None:
+     except (Exception, KeyboardInterrupt) as exc:
+         _print_warning(f"    Codex sign-in did not complete: {exc}. Run later: {relogin}")
+         return
++    # A side-tool login still re-authenticates the Codex singleton: the usage display follows it.
++    from hermes_cli.auth_usage_selection import record_singleton_login_selection
++    record_singleton_login_selection("openai-codex", surface="cli")
+     _print_success("    Logged in — image generation will use these Codex OAuth credentials")
+ 
+ 
+diff --git a/hermes_cli/web_routers/oauth.py b/hermes_cli/web_routers/oauth.py
+index 61db6225bcf..3b6bdd08bd6 100644
+--- a/hermes_cli/web_routers/oauth.py
++++ b/hermes_cli/web_routers/oauth.py
+@@ -330,6 +330,7 @@ def _codex_full_login_worker(session_id: str) -> None:
+ 
+         tokens = _codex_exchange_tokens(httpx, code_resp)
+         from hermes_cli.auth import _save_codex_tokens
++        from hermes_cli.auth_usage_selection import record_singleton_login_selection
+ 
+         # The cancellation check and the save are one atomic critical section
+         # under the lock cancel_oauth_session() uses; otherwise DELETE could
+@@ -337,11 +338,15 @@ def _codex_full_login_worker(session_id: str) -> None:
+         # persisted after the user believed the login was aborted. The profile scope
+         # (which holds _SKILLS_PROFILE_LOCK) is entered first, as in every other saver:
+         # the reverse order deadlocks against a Nous/xAI/MiniMax save finishing at once.
+-        with _profile_scope(session_profile), _oauth_sessions_lock:
+-            if _codex_cancelled(sess, session_id, " before token save"):
+-                return
+-            _save_codex_tokens(tokens)
+-            sess["status"] = "approved"
++        with _profile_scope(session_profile):
++            with _oauth_sessions_lock:
++                if _codex_cancelled(sess, session_id, " before token save"):
++                    return
++                _save_codex_tokens(tokens)
++                sess["status"] = "approved"
++            # Same profile scope as the save: the usage-display pointer names the seeded
++            # ``device_code`` row of the store the login just wrote (never the launch profile).
++            record_singleton_login_selection("openai-codex", surface="desktop")
+         _log.info("oauth/device: openai-codex login completed (session=%s)", session_id)
+     except Exception as e:
+         from hermes_cli.observability.shared_metrics_setup import note_oauth_failure
+diff --git a/hermes_cli/web_routers/ops.py b/hermes_cli/web_routers/ops.py
+index 0df948a5db7..7fd74f2d6b0 100644
+--- a/hermes_cli/web_routers/ops.py
++++ b/hermes_cli/web_routers/ops.py
+@@ -397,7 +397,7 @@ async def add_credential_pool_entry(body: CredentialPoolAdd, profile: Optional[s
+         try:
+             pool = load_pool(provider)
+             label = (body.label or "").strip() or f"key #{len(pool.entries()) + 1}"
+-            pool.add_entry(PooledCredential(
++            entry = pool.add_entry(PooledCredential(
+                 provider=provider,
+                 # Add a distinct, self-contained pool entry per account (matching the qwen-oauth /
+                 # minimax-oauth multi-account patterns, and the xai-oauth path below) instead of routing
+@@ -413,6 +413,10 @@ async def add_credential_pool_entry(body: CredentialPoolAdd, profile: Optional[s
+                 source=SOURCE_MANUAL,
+                 access_token=api_key,
+             ))
++            # Usage-display pointer only (inference order untouched): an explicit add from the
++            # dashboard is the account the user means when they look at their quota.
++            from hermes_cli.auth_usage_selection import record_pool_entry_login_selection
++            record_pool_entry_login_selection(provider, entry, surface="desktop")
+             # Re-adding is an explicit re-engagement signal: lift every suppression
+             # for this provider so a source deleted earlier can seed again
+             # (mirrors `hermes auth add`).
+@@ -464,6 +468,9 @@ async def remove_credential_pool_entry(provider: str, index: int, profile: Optio
+         if removed is None:
+             raise HTTPException(status_code=404, detail="No pool entry at that index")
+ 
++        from hermes_cli.auth_usage_selection import clear_usage_login_selection
++        if getattr(removed, "id", None):
++            clear_usage_login_selection(provider, credential_id=removed.id)
+         cleaned: list[str] = []
+         hints: list[str] = []
+         step = find_removal_step(provider, removed.source or "")
+diff --git a/run_agent.py b/run_agent.py
+index eda287031f8..b90ad3dea0f 100644
+--- a/run_agent.py
++++ b/run_agent.py
+@@ -187,14 +187,16 @@ def _notify_context_engine_session_end(agent: Any, messages: Optional[list]) ->
+         _quietly(lambda: engine.on_session_end(agent.session_id or "", messages or []))
+ 
+ 
+-def _pool_may_recover_from_rate_limit(pool) -> bool:
++def _pool_may_recover_from_rate_limit(pool, model: Optional[str] = None) -> bool:
+     """Wait for credential-pool rotation (True) or fall back to ``fallback_model`` (False) after a 429.
+ 
+     Rotation only helps when the pool has somewhere to go; a single-credential pool would retry the same quota.
++    *model* scopes availability: an unscoped check honours every model's cooldown, so a rate limit on a
++    sibling model would skip rotation for the model the session actually sends.
+ 
+     See issues #11314 and #13636.
+     """
+-    return pool is not None and pool.has_available() and len(pool.entries()) > 1
++    return pool is not None and pool.has_available(model=model or None) and len(pool.entries()) > 1
+ 
+ 
+ class _StreamErrorEvent(Exception):
+diff --git a/tests/agent/test_auxiliary_client.py b/tests/agent/test_auxiliary_client.py
+index 6a1611830ef..b793911efee 100644
+--- a/tests/agent/test_auxiliary_client.py
++++ b/tests/agent/test_auxiliary_client.py
+@@ -669,7 +669,7 @@ class TestAnthropicOAuthFlag:
+             def has_credentials(self):
+                 return True
+ 
+-            def select(self):
++            def select(self, *, model=None):
+                 return _Entry()
+ 
+         with (
+diff --git a/tests/agent/test_auxiliary_pool_model_cooldowns.py b/tests/agent/test_auxiliary_pool_model_cooldowns.py
+new file mode 100644
+index 00000000000..135e999a4ce
+--- /dev/null
++++ b/tests/agent/test_auxiliary_pool_model_cooldowns.py
+@@ -0,0 +1,143 @@
++"""Auxiliary 429 recovery must not turn a model throttle into an account outage.
++
++Real pool selection, rotation and auth-store persistence under an isolated Hermes
++home; only client construction and the provider request are replaced (no network).
++"""
++import asyncio
++from types import SimpleNamespace
++from typing import Any
++
++import httpx
++import pytest
++
++import agent.auxiliary_client as aux
++from agent.credential_pool import CredentialPool, PooledCredential
++from hermes_cli.auth import read_credential_pool
++from hermes_constants import reset_hermes_home_override, set_hermes_home_override
++
++MODEL = "claude-haiku-test"
++SIBLING = "claude-opus-test"
++NOW = 1_800_000_000.0
++BASE = "https://api.anthropic.com"
++
++
++class _Limited(Exception):
++    def __init__(self, headers=None, message="This request would exceed your account's rate limit."):
++        super().__init__(message)
++        self.status_code = 429
++        self.response = httpx.Response(429, headers=headers or {})
++
++
++@pytest.fixture
++def pool_home(tmp_path, monkeypatch):
++    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
++    token = set_hermes_home_override(tmp_path)
++    monkeypatch.setattr("time.time", lambda: NOW)
++    pool = CredentialPool(provider="anthropic", entries=[
++        PooledCredential.from_dict("anthropic", {
++            "id": f"seat{i}", "label": f"seat-{i}", "auth_type": "api_key",
++            "priority": i, "access_token": f"test-key-{i}", "base_url": BASE,
++            "source": "manual", "model_cooldowns": {"existing-model": NOW + 7200},
++        }) for i in range(3)
++    ])
++    pool._persist()
++    monkeypatch.setattr(aux, "load_pool", lambda provider: pool)
++    monkeypatch.setattr(aux, "_client_cache", {})
++    try:
++        yield pool
++    finally:
++        reset_hermes_home_override(token)
++
++
++@pytest.mark.parametrize("async_mode", [False, True], ids=["sync", "async"])
++def test_rotated_429s_only_bench_the_wire_model(pool_home, monkeypatch, async_mode):
++    pool = pool_home
++    builds = []
++    requests = []
++
++    def build(token, base_url):
++        builds.append(token)
++        return SimpleNamespace(api_key=token, base_url=base_url)
++
++    def request(client, kwargs, **ignored):
++        requests.append((client.api_key, kwargs["model"]))
++        # A default changes mid-flight: recovery must keep the model that failed.
++        monkeypatch.setattr(aux, "_get_aux_model_for_provider", lambda provider: SIBLING)
++        if client.api_key == "test-key-1":
++            # Another request moves current() before this rotated request fails.
++            pool.select(model=SIBLING)
++        raise _Limited({"Retry-After": "7"})
++
++    async def async_request(*args, **kwargs):
++        return request(*args, **kwargs)
++
++    monkeypatch.setattr("agent.anthropic_adapter.build_anthropic_client", build)
++    monkeypatch.setattr("agent.anthropic_credentials.resolve_anthropic_token", lambda: None)
++    monkeypatch.setattr(aux, "_get_aux_model_for_provider", lambda provider: MODEL)
++    monkeypatch.setattr(aux, "_relay_sync_completion", request)
++    monkeypatch.setattr(aux, "_relay_async_completion", async_request)
++    monkeypatch.setattr(aux, "_try_configured_fallback_chain", lambda *a, **k: (None, None, ""))
++    monkeypatch.setattr(aux, "_try_main_agent_model_fallback", lambda *a, **k: (None, None, ""))
++    call: dict[str, Any] = dict(
++        task="title_generation", provider="anthropic", messages=[{"role": "user", "content": "Title"}],
++    )
++    with pytest.raises(_Limited):
++        if async_mode:
++            asyncio.run(aux.async_call_llm(**call))
++        else:
++            aux.call_llm(**call)
++
++    assert requests == [("test-key-0", MODEL), ("test-key-0", MODEL), ("test-key-1", MODEL)]
++    assert builds == ["test-key-0", "test-key-1"]
++    rows = {row["id"]: row for row in read_credential_pool("anthropic")}
++    for seat in ("seat0", "seat1"):
++        assert rows[seat].get("last_status") != "exhausted", "a title 429 must not poison the account"
++        assert rows[seat]["model_cooldowns"][MODEL] == NOW + 7
++        assert rows[seat]["model_cooldowns"]["existing-model"] == NOW + 7200
++    assert MODEL not in rows["seat2"]["model_cooldowns"]
++    assert pool.has_available(model=SIBLING)
++    assert pool.select(model=MODEL).id == "seat2"
++
++
++@pytest.mark.parametrize("reset_source", ["header", "body", "message", "absent", "existing-longer"])
++def test_model_cooldown_honors_reset_without_clearing_other_limits(pool_home, reset_source):
++    pool = pool_home
++    entry = pool.select(model=MODEL)
++    exc = _Limited()
++    expected = NOW + 7
++    if reset_source == "header":
++        exc = _Limited({"retry-after": "7"})
++    elif reset_source == "body":
++        exc.body = {"error": {"message": str(exc), "resets_at": expected}}
++    elif reset_source == "message":
++        exc = _Limited(message="Rate limit exceeded; retry after 7 seconds")
++    elif reset_source == "absent":
++        expected = NOW + 3600  # Keep the pool's conservative default policy.
++    else:
++        expected = NOW + 900
++        pool._adopt(entry, model_cooldowns={MODEL: expected, "existing-model": NOW + 7200})
++        exc = _Limited({"Retry-After": "7"})
++
++    assert aux._recover_provider_pool("anthropic", exc, failed_api_key=entry.runtime_api_key, model=MODEL)
++
++    rows = {row["id"]: row for row in read_credential_pool("anthropic")}
++    assert rows["seat0"].get("last_status") != "exhausted"
++    assert rows["seat0"]["model_cooldowns"][MODEL] == expected
++    assert rows["seat0"]["model_cooldowns"]["existing-model"] == NOW + 7200
++    assert pool.has_available(model=SIBLING)
++
++
++@pytest.mark.parametrize("status,message", [
++    (401, "Unauthorized"), (402, "Insufficient credits"), (429, "insufficient_quota"),
++])
++def test_auth_and_payment_still_bench_the_whole_credential(pool_home, status, message):
++    pool = pool_home
++    entry = pool.select(model=MODEL)
++    exc = _Limited(message=message)
++    exc.status_code = status
++    aux._recover_provider_pool("anthropic", exc, failed_api_key=entry.runtime_api_key, model=MODEL)
++
++    row = next(row for row in read_credential_pool("anthropic") if row["id"] == entry.id)
++    assert row["last_status"] == "exhausted"
++    assert MODEL not in row["model_cooldowns"]
++    assert pool.select(model=SIBLING).id != entry.id
+diff --git a/tests/agent/test_rate_limit_rotation_model_scoped.py b/tests/agent/test_rate_limit_rotation_model_scoped.py
+new file mode 100644
+index 00000000000..2c6836507e7
+--- /dev/null
++++ b/tests/agent/test_rate_limit_rotation_model_scoped.py
+@@ -0,0 +1,118 @@
++"""A per-model Anthropic 429 rotates through every account before the provider fallback activates.
++
++The eager rate-limit fallback (``route_classified_error``) waits while credential-pool rotation
++may still recover. Asking the pool without the model honours every model's cooldown: one cooled
++sibling model on every account made the pool look empty, so the first 429 for the configured
++model jumped straight to the fallback provider while two accounts could still serve it.
++
++Real ``CredentialPool`` + real rotation (``recover_with_credential_pool``) + real classifier and
++eager-fallback router; only the agent object is a stand-in (no client build, no network).
++"""
++import time
++
++from agent.agent_runtime_helpers import recover_with_credential_pool
++from agent.credential_pool import CredentialPool, PooledCredential
++from agent.error_classifier import classify_api_error
++from agent.turn_recovery import route_classified_error
++from agent.turn_retry_state import TurnRetryState
++
++_BASE = "https://api.anthropic.com"
++PRIMARY_MODEL = "claude-opus-5-5"
++SIBLING_MODEL = "claude-fable-5-1"
++SEAT_KEYS = ("sk-ant-api03-seat-one", "sk-ant-api03-seat-two", "sk-ant-api03-seat-three")
++
++
++class _RateLimited(Exception):
++    status_code = 429
++
++
++class _Agent:
++    """Session stand-in carrying exactly the state the rotation and router read."""
++
++    provider = "anthropic"
++    base_url = _BASE
++    model = PRIMARY_MODEL
++    api_mode = "anthropic_messages"
++    log_prefix = ""
++    compression_enabled = True
++
++    def __init__(self, pool):
++        self._credential_pool = pool
++        first = pool.select(model=PRIMARY_MODEL)
++        self.api_key = first.runtime_api_key
++        self._credential_pool_entry_id = first.id
++        self._fallback_chain = [{"provider": "openai-codex", "model": "gpt-6.1-sol"}]
++        self._fallback_index = 0
++        self.fallback_activations = 0
++        self.statuses = []
++
++    def _swap_credential(self, entry):
++        self.api_key = entry.runtime_api_key
++        self._credential_pool_entry_id = entry.id
++        return True
++
++    def _is_entitlement_failure(self, error_context, status_code):
++        return False
++
++    def _buffer_diagnostic_status(self, line):
++        self.statuses.append(line)
++
++    def _try_activate_fallback(self, **_kwargs):
++        self.fallback_activations += 1
++        return False  # keep the router on its fall-through path; the call itself is the evidence
++
++    def _vprint(self, *_args, **_kwargs):
++        pass
++
++
++def _pool(cooled_models):
++    until = time.time() + 3600
++    return CredentialPool(provider="anthropic", entries=[
++        PooledCredential.from_dict("anthropic", {
++            "id": f"seat{i}", "label": f"seat-{i}", "auth_type": "api_key", "priority": i,
++            "access_token": key, "base_url": _BASE, "source": "manual",
++            "model_cooldowns": {m: until for m in cooled_models},
++        }) for i, key in enumerate(SEAT_KEYS)])
++
++
++def _opus_429(agent, has_retried_429):
++    """One Opus 429 through the real recovery order: pool recovery first, else the eager router."""
++    error = _RateLimited("This request would exceed your account's rate limit. Please try again later.")
++    classified = classify_api_error(error, provider="anthropic", model=PRIMARY_MODEL, base_url=_BASE)
++    recovered, has_retried_429 = recover_with_credential_pool(
++        agent, status_code=429, has_retried_429=has_retried_429,
++        classified_reason=classified.reason, error_context=classified.error_context)
++    if recovered:
++        return True, False
++    route_classified_error(
++        agent, error, classified, TurnRetryState(), error_msg=str(error),
++        error_context=classified.error_context, recovered_with_pool=False, base_url=_BASE,
++        model=PRIMARY_MODEL, messages=[], api_messages=[], system_message="", active_system_prompt="",
++        conversation_history=[], retry_count=0, max_retries=3, compression_attempts=0,
++        max_compression_attempts=3, api_call_count=1, effective_task_id=None)
++    return False, has_retried_429
++
++
++def test_sibling_model_cooldowns_do_not_skip_rotation_for_the_requested_model():
++    agent = _Agent(_pool([SIBLING_MODEL]))
++
++    _opus_429(agent, has_retried_429=False)
++
++    assert agent.fallback_activations == 0
++
++
++def test_opus_429s_rotate_through_all_three_accounts_before_falling_back():
++    agent = _Agent(_pool([SIBLING_MODEL]))
++    seats_used = [agent._credential_pool_entry_id]
++    has_retried_429 = False
++    for _ in range(12):  # bounded: retry-once + rotate per seat, then the fallback
++        if agent.fallback_activations:
++            break
++        recovered, has_retried_429 = _opus_429(agent, has_retried_429)
++        if recovered:
++            seats_used.append(agent._credential_pool_entry_id)
++
++    assert seats_used == ["seat0", "seat1", "seat2"]
++    assert agent.fallback_activations == 1
++    assert agent._credential_pool.has_available(model=PRIMARY_MODEL) is False
++    assert agent._credential_pool.has_available(model="claude-haiku-5") is True  # other models untouched
+diff --git a/tests/gateway/test_gateway_primary_model_scoped_credentials.py b/tests/gateway/test_gateway_primary_model_scoped_credentials.py
+new file mode 100644
+index 00000000000..f9b149a8b01
+--- /dev/null
++++ b/tests/gateway/test_gateway_primary_model_scoped_credentials.py
+@@ -0,0 +1,97 @@
++"""Gateway primary credential resolution is scoped to the configured primary MODEL.
++
++Anthropic rate-limits per model, so the pool records a 429 as a cooldown on that model only.
++``gateway.run._resolve_runtime_agent_kwargs`` resolved the primary without naming the model, and
++an unscoped pool selection honours every model's cooldown: one cooled-down sibling model on every
++account blocked the configured model too, and the gateway reported "No Anthropic credentials" or
++fell back to another provider while the requested model was still servable.
++
++Real ``config.yaml`` + ``auth.json`` in a temp ``HERMES_HOME``; real pool, ladder and fallback walker.
++"""
++import json
++import time
++
++import pytest
++
++PRIMARY_MODEL = "claude-opus-5-5"
++SIBLING_MODEL = "claude-fable-5-1"
++FALLBACK_MODEL = "gpt-6.1-sol"
++SEAT_KEYS = ("sk-ant-api03-seat-one", "sk-ant-api03-seat-two", "sk-ant-api03-seat-three")
++
++
++def _anthropic_seat(index: int, cooled_models: tuple[str, ...]) -> dict:
++    until = time.time() + 3600
++    return {
++        "id": f"seat{index}", "label": f"seat-{index}", "auth_type": "api_key", "priority": index,
++        "source": "manual", "access_token": SEAT_KEYS[index],
++        "model_cooldowns": {model: until for model in cooled_models},
++    }
++
++
++@pytest.fixture
++def gateway_home(tmp_path, monkeypatch):
++    """Configured Opus primary on Anthropic, Codex GPT fallback; seats written by the test."""
++    home = tmp_path / "hermes"
++    home.mkdir()
++    fake_user_home = tmp_path / "user"
++    fake_user_home.mkdir()
++    monkeypatch.setenv("HOME", str(fake_user_home))
++    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(fake_user_home / ".claude"))
++    for var in ("ANTHROPIC_TOKEN", "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "OPENAI_API_KEY"):
++        monkeypatch.delenv(var, raising=False)
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    import hermes_constants
++    hermes_constants._default_hermes_root_memo = None  # type: ignore[attr-defined]
++    import gateway.run as gateway_run
++    monkeypatch.setattr(gateway_run, "_hermes_home", home)
++    (home / "config.yaml").write_text(
++        f"model:\n  default: {PRIMARY_MODEL}\n  provider: anthropic\n"
++        f"fallback_providers:\n  - provider: openai-codex\n    model: {FALLBACK_MODEL}\n")
++
++    def write_seats(*cooled_per_seat: tuple[str, ...]) -> None:
++        (home / "auth.json").write_text(json.dumps({"version": 1, "credential_pool": {
++            "anthropic": [_anthropic_seat(i, cooled) for i, cooled in enumerate(cooled_per_seat)],
++            "openai-codex": [{
++                "id": "codex1", "label": "codex", "auth_type": "oauth", "priority": 0,
++                "source": "manual", "access_token": "codex-access-token", "refresh_token": "codex-refresh",
++            }],
++        }}))
++
++    return write_seats
++
++
++def _resolve():
++    from gateway.run import _resolve_runtime_agent_kwargs
++    return _resolve_runtime_agent_kwargs()
++
++
++def test_sibling_model_cooldown_on_every_seat_leaves_primary_model_on_anthropic(gateway_home):
++    gateway_home((SIBLING_MODEL,), (SIBLING_MODEL,), (SIBLING_MODEL,))
++
++    runtime = _resolve()
++
++    assert runtime["provider"] == "anthropic"
++    assert runtime["api_key"] in SEAT_KEYS
++    assert "_fallback_notice" not in runtime and "model" not in runtime
++
++
++@pytest.mark.parametrize("blocked_seats", [1, 2])
++def test_partially_rate_limited_primary_model_stays_on_a_free_anthropic_seat(gateway_home, blocked_seats):
++    gateway_home(*[(SIBLING_MODEL, PRIMARY_MODEL) if i < blocked_seats else (SIBLING_MODEL,) for i in range(3)])
++
++    runtime = _resolve()
++
++    assert runtime["provider"] == "anthropic"
++    assert runtime["api_key"] in SEAT_KEYS[blocked_seats:]
++    assert "_fallback_notice" not in runtime
++
++
++def test_primary_model_rate_limited_on_every_seat_falls_back_to_configured_gpt(gateway_home):
++    gateway_home(*[(SIBLING_MODEL, PRIMARY_MODEL)] * 3)
++
++    runtime = _resolve()
++
++    assert runtime["provider"] == "openai-codex"
++    assert runtime["model"] == FALLBACK_MODEL
++    assert runtime["api_key"] == "codex-access-token"
++    assert PRIMARY_MODEL in runtime["_fallback_notice"] and FALLBACK_MODEL in runtime["_fallback_notice"]
+diff --git a/tests/hermes_cli/test_auth_select.py b/tests/hermes_cli/test_auth_select.py
+new file mode 100644
+index 00000000000..da16f7ef8bf
+--- /dev/null
++++ b/tests/hermes_cli/test_auth_select.py
+@@ -0,0 +1,126 @@
++"""Explicit work/usage credential selection through the public auth command."""
++import argparse
++import json
++from pathlib import Path
++
++import pytest
++
++from hermes_cli.subcommands.auth import build_auth_parser
++from hermes_cli.auth_commands import auth_command
++from hermes_cli.auth import write_credential_pool, read_credential_pool
++from hermes_cli.auth_usage_selection import get_usage_login_selection, record_usage_login_selection
++
++
++@pytest.fixture(autouse=True)
++def isolated(tmp_path, monkeypatch):
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    home = tmp_path / "hermes"
++    home.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    for key in ("ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"):
++        monkeypatch.delenv(key, raising=False)
++    write_credential_pool("anthropic", [
++        dict(id=f"account{i}", label=f"person{i}@example.com", auth_type="oauth",
++             source="manual:hermes_pkce", priority=i, access_token=f"fixture-token-{i}",
++             model_cooldowns={"some-model": 9999999999})
++        for i in range(3)
++    ])
++    record_usage_login_selection("anthropic", "account0", login_at="2026-01-01T00:00:00Z")
++    return home
++
++
++def invoke(*argv):
++    parser = argparse.ArgumentParser()
++    build_auth_parser(parser.add_subparsers(), cmd_auth=auth_command)
++    args = parser.parse_args(["auth", "select", "anthropic", *argv])
++    args.func(args)
++
++
++def test_select_moves_work_and_usage_together(isolated, capsys):
++    invoke("account2")
++    rows = read_credential_pool("anthropic")
++    assert [r["id"] for r in rows] == ["account2", "account0", "account1"]
++    assert [r["priority"] for r in rows] == [0, 1, 2]
++    assert all(r["model_cooldowns"] == {"some-model": 9999999999} for r in rows)
++    choice = get_usage_login_selection("anthropic")
++    assert choice["credential_id"] == "account2"
++    assert choice["account_email"] == "person2@example.com"
++    assert choice["selected_at"]
++    assert "login_at" not in choice
++    output = capsys.readouterr().out
++    assert "person2@example.com" in output
++    assert "fixture-token" not in output
++
++
++@pytest.mark.parametrize("scope", ["work", "usage"])
++def test_independent_scope_preserves_the_other_choice(isolated, scope):
++    before = read_credential_pool("anthropic")
++    old_choice = get_usage_login_selection("anthropic")
++    invoke("2", "--scope", scope)
++    rows = read_credential_pool("anthropic")
++    choice = get_usage_login_selection("anthropic")
++    if scope == "work":
++        assert rows[0]["id"] == "account1"
++        assert choice == old_choice
++    else:
++        assert rows == before
++        assert choice["credential_id"] == "account1"
++
++
++def test_invalid_target_leaves_store_unchanged(isolated):
++    before = (isolated / "auth.json").read_bytes()
++    with pytest.raises(SystemExit, match="No credential"):
++        invoke("missing-id")
++    assert (isolated / "auth.json").read_bytes() == before
++
++
++def test_selection_write_failure_keeps_both_choices(isolated, monkeypatch):
++    from hermes_cli import auth as auth_mod
++    before = (isolated / "auth.json").read_bytes()
++    def fail(store):
++        raise OSError("fixture failed save")
++    monkeypatch.setattr(auth_mod, "_save_auth_store", fail)
++    with pytest.raises(OSError, match="failed save"):
++        invoke("account2")
++    assert (isolated / "auth.json").read_bytes() == before
++
++
++def test_native_resolver_uses_selected_work_credential(isolated):
++    from hermes_cli.runtime_provider import resolve_runtime_provider
++    invoke("account2")
++    runtime = resolve_runtime_provider(requested="anthropic", target_model="claude-opus-5-5")
++    assert runtime["api_key"] == "fixture-token-2"
++
++
++def test_explicit_selection_preserves_other_provider_metadata(isolated):
++    record_usage_login_selection("openai-codex", "codex0", login_at="2026-01-02T00:00:00Z")
++    old = get_usage_login_selection("openai-codex")
++    invoke("account1")
++    assert get_usage_login_selection("openai-codex") == old
++
++
++def test_list_shows_cached_email_and_usage_choice(isolated, capsys):
++    from types import SimpleNamespace
++    from hermes_cli.auth_commands import auth_list_command
++    rows = read_credential_pool("anthropic")
++    rows[1]["label"] = "generic-oauth-label"
++    rows[1]["account_email"] = "display-account@example.com"
++    write_credential_pool("anthropic", rows)
++    record_usage_login_selection("anthropic", "account1")
++    auth_list_command(SimpleNamespace(provider="anthropic"))
++    output = capsys.readouterr().out
++    assert "display-account@example.com" in output
++    assert "usage" in next(line for line in output.splitlines() if "id=account1" in line)
++
++
++def test_profile_without_own_pool_cannot_reorder_root(isolated, monkeypatch, tmp_path):
++    root_before = (isolated / "auth.json").read_bytes()
++    profile = tmp_path / "named-profile"
++    profile.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(profile))
++    from hermes_cli import auth as auth_mod
++    monkeypatch.setattr(auth_mod, "_load_global_auth_store",
++                        lambda: json.loads(root_before))
++    with pytest.raises(SystemExit):
++        invoke("account2")
++    assert (isolated / "auth.json").read_bytes() == root_before
+diff --git a/tests/hermes_cli/test_auth_usage_selection.py b/tests/hermes_cli/test_auth_usage_selection.py
+new file mode 100644
+index 00000000000..416d88862a7
+--- /dev/null
++++ b/tests/hermes_cli/test_auth_usage_selection.py
+@@ -0,0 +1,402 @@
++"""Last-successful-login selection metadata (``usage_login_selection`` in auth.json).
++
++The provider-usage display must show the account the user logged into LAST, not whichever
++pooled credential sits at priority 0 / was refreshed most recently. The pointer is written
++only by an explicit, successful login (CLI ``hermes auth add`` and the Desktop native login
++routes) and is never touched by token refresh, pool rewrites or usage polling. Inference
++rotation (priority / fallback / cooldowns) is untouched by this metadata.
++"""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++import pytest
++
++from hermes_cli import auth as auth_mod
++from hermes_cli.auth import read_credential_pool, write_credential_pool
++from hermes_cli.auth_usage_selection import (
++    USAGE_LOGIN_SELECTION_KEY,
++    clear_usage_login_selection,
++    get_usage_login_selection,
++    record_singleton_login_selection,
++    record_usage_login_selection,
++    resolve_usage_login_entry,
++    seed_usage_login_selection_if_absent,
++)
++
++
++@pytest.fixture(autouse=True)
++def _isolated_home(tmp_path, monkeypatch):
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    home = tmp_path / "hermes"  # not Path.home()/.hermes: the auth seat belt refuses that path
++    home.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    for key in ("ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "OPENAI_API_KEY"):
++        monkeypatch.delenv(key, raising=False)
++    return home
++
++
++def _anthropic_rows() -> list[dict]:
++    return [
++        dict(id=f"ant{i}", label=f"claude{i}@example.com", source="manual:hermes_pkce",
++             auth_type="oauth", access_token=f"fixture-access-{i}",
++             refresh_token=f"fixture-refresh-{i}", priority=i)
++        for i in range(4)
++    ]
++
++
++def _raw_store(home: Path) -> dict:
++    return json.loads((home / "auth.json").read_text())
++
++
++# --------------------------------------------------------------------------- core contract
++
++
++def test_get_returns_none_when_nothing_recorded(_isolated_home):
++    write_credential_pool("anthropic", _anthropic_rows())
++    assert get_usage_login_selection("anthropic") is None
++
++
++def test_record_then_get_roundtrip_without_secrets(_isolated_home):
++    write_credential_pool("anthropic", _anthropic_rows())
++
++    recorded = record_usage_login_selection(
++        "anthropic", "ant2", account_email="f_design@example.com", surface="cli")
++
++    selection = get_usage_login_selection("anthropic")
++    assert selection == recorded
++    assert selection["credential_id"] == "ant2"
++    assert selection["account_email"] == "f_design@example.com"
++    assert selection["surface"] == "cli"
++    assert selection["login_at"].endswith("Z")
++
++    section = _raw_store(_isolated_home)[USAGE_LOGIN_SELECTION_KEY]["anthropic"]
++    dumped = json.dumps(section)
++    assert "fixture-access" not in dumped and "fixture-refresh" not in dumped
++    assert not any("token" in key or "secret" in key for key in section)
++    # Inference policy untouched: order and priorities of the pool are exactly as written.
++    assert [row["id"] for row in read_credential_pool("anthropic")] == ["ant0", "ant1", "ant2", "ant3"]
++    assert [row["priority"] for row in read_credential_pool("anthropic")] == [0, 1, 2, 3]
++
++
++def test_relogin_replaces_pointer_same_or_different_account(_isolated_home, monkeypatch):
++    from hermes_cli import auth_usage_selection as sel
++
++    stamps = iter(["2026-10-01T00:00:00Z", "2026-10-02T00:00:00Z", "2026-10-03T00:00:00Z"])
++    monkeypatch.setattr(sel, "_utc_now_z", lambda: next(stamps))
++
++    record_usage_login_selection("anthropic", "ant0")
++    record_usage_login_selection("anthropic", "ant3", account_email="other@example.com")
++    assert get_usage_login_selection("anthropic") == {
++        "credential_id": "ant3", "login_at": "2026-10-02T00:00:00Z", "account_email": "other@example.com"}
++
++    # Logging into the same account again is still a new login: the timestamp moves forward.
++    record_usage_login_selection("anthropic", "ant3")
++    assert get_usage_login_selection("anthropic") == {
++        "credential_id": "ant3", "login_at": "2026-10-03T00:00:00Z"}
++
++
++def test_providers_are_independent(_isolated_home):
++    record_usage_login_selection("anthropic", "ant1")
++    record_usage_login_selection("openai-codex", "cdx9")
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant1"
++    assert get_usage_login_selection("openai-codex")["credential_id"] == "cdx9"
++    assert get_usage_login_selection("OpenAI-Codex ")["credential_id"] == "cdx9"  # normalized
++
++
++@pytest.mark.parametrize("bad_id", ["", "   ", None, 42, "x" * 65, "has space", "../etc"])
++def test_invalid_credential_id_is_rejected_and_store_untouched(_isolated_home, bad_id):
++    record_usage_login_selection("anthropic", "ant0")
++    before = _raw_store(_isolated_home)
++    with pytest.raises(ValueError):
++        record_usage_login_selection("anthropic", bad_id)
++    assert _raw_store(_isolated_home) == before
++
++
++def test_secret_like_metadata_is_rejected(_isolated_home):
++    with pytest.raises(ValueError):
++        record_usage_login_selection("anthropic", "ant0", access_token="sk-nope")
++    with pytest.raises(ValueError):
++        record_usage_login_selection("anthropic", "ant0", account_email={"nested": 1})
++    assert get_usage_login_selection("anthropic") is None
++
++
++def test_clear_removes_only_that_provider(_isolated_home):
++    record_usage_login_selection("anthropic", "ant1")
++    record_usage_login_selection("openai-codex", "cdx9")
++    assert clear_usage_login_selection("anthropic") is True
++    assert clear_usage_login_selection("anthropic") is False
++    assert get_usage_login_selection("anthropic") is None
++    assert get_usage_login_selection("openai-codex")["credential_id"] == "cdx9"
++
++
++def test_clear_matching_only_when_credential_id_matches(_isolated_home):
++    record_usage_login_selection("anthropic", "ant1")
++    assert clear_usage_login_selection("anthropic", credential_id="ant0") is False
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant1"
++    assert clear_usage_login_selection("anthropic", credential_id="ant1") is True
++    assert get_usage_login_selection("anthropic") is None
++
++
++# ------------------------------------------------------------ refresh / pool writes never move it
++
++
++def test_token_refresh_and_pool_rewrite_do_not_move_pointer(_isolated_home, monkeypatch):
++    from hermes_cli import auth_usage_selection as sel
++
++    monkeypatch.setattr(sel, "_utc_now_z", lambda: "2026-10-01T00:00:00Z")
++    write_credential_pool("anthropic", _anthropic_rows())
++    record_usage_login_selection("anthropic", "ant2", account_email="f_design@example.com")
++
++    # Automatic refresh: tokens rotate, last_refresh moves, priority reshuffles — all irrelevant.
++    rotated = []
++    for row in read_credential_pool("anthropic"):
++        row = dict(row, access_token=row["access_token"] + "-rotated",
++                   refresh_token=row["refresh_token"] + "-rotated", last_refresh="2026-12-31T00:00:00Z")
++        row["priority"] = 3 - row["priority"]
++        rotated.append(row)
++    write_credential_pool("anthropic", rotated)
++
++    # Codex singleton refresh save path (write_through=True is what a refresh passes).
++    auth_mod._save_codex_tokens({"access_token": "codex-new", "refresh_token": "codex-new-r"},
++                                last_refresh="2026-12-31T00:00:00Z", write_through=True)
++    # Admin pool ops that rewrite auth.json wholesale.
++    auth_mod.mark_provider_active_if_unset("anthropic")
++
++    assert get_usage_login_selection("anthropic") == {
++        "credential_id": "ant2", "login_at": "2026-10-01T00:00:00Z", "account_email": "f_design@example.com"}
++    assert get_usage_login_selection("openai-codex") is None
++
++
++# ----------------------------------------------------------------------------- resolve / seed
++
++
++def test_resolve_returns_redacted_pool_row_or_none(_isolated_home):
++    write_credential_pool("anthropic", _anthropic_rows())
++    assert resolve_usage_login_entry("anthropic") is None  # nothing recorded
++
++    record_usage_login_selection("anthropic", "ant2")
++    resolved = resolve_usage_login_entry("anthropic")
++    assert resolved["id"] == "ant2"
++    assert resolved["label"] == "claude2@example.com"
++    assert resolved["source"] == "manual:hermes_pkce"
++    assert resolved["priority"] == 2
++    assert "access_token" not in resolved and "refresh_token" not in resolved
++    assert "fixture" not in json.dumps(resolved)
++
++    # Pointer kept (retained until the next login) but it no longer resolves once the row is gone.
++    write_credential_pool("anthropic", [r for r in _anthropic_rows() if r["id"] != "ant2"], removed_ids=["ant2"])
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant2"
++    assert resolve_usage_login_entry("anthropic") is None
++
++
++def test_seed_if_absent_is_explicit_and_never_guesses(_isolated_home):
++    write_credential_pool("anthropic", _anthropic_rows())
++
++    # Unknown id: refused, nothing written.
++    assert seed_usage_login_selection_if_absent("anthropic", "nope") is None
++    assert get_usage_login_selection("anthropic") is None
++
++    seeded = seed_usage_login_selection_if_absent("anthropic", "ant2", account_email="f_design@example.com")
++    assert seeded["credential_id"] == "ant2" and seeded["surface"] == "migration"
++
++    # Already present: the explicit seed never overrides a recorded login.
++    assert seed_usage_login_selection_if_absent("anthropic", "ant0") is None
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant2"
++
++
++def test_migration_preserves_login_completed_during_pool_read(_isolated_home, monkeypatch):
++    from hermes_cli import auth_usage_selection as sel
++    write_credential_pool("anthropic", _anthropic_rows())
++    original = sel.read_credential_pool
++    def concurrent_login(provider):
++        rows = original(provider)
++        record_usage_login_selection(provider, "ant1", surface="cli")
++        return rows
++    monkeypatch.setattr(sel, "read_credential_pool", concurrent_login)
++    assert seed_usage_login_selection_if_absent("anthropic", "ant2") is None
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant1"
++
++
++def test_logout_retains_record_marker_for_usage_fallback_guard(_isolated_home):
++    from hermes_cli import auth_usage_selection as sel
++    record_usage_login_selection("anthropic", "ant2")
++    clear_usage_login_selection("anthropic")
++    assert get_usage_login_selection("anthropic") is None
++    assert hasattr(sel, "usage_login_selection_was_recorded")
++    assert sel.usage_login_selection_was_recorded("anthropic")
++    assert not sel.usage_login_selection_was_recorded("openai-codex")
++
++
++@pytest.mark.parametrize("provider", ["anthropic", "openai-codex"])
++def test_logout_command_clears_usage_choice(_isolated_home, monkeypatch, provider):
++    from types import SimpleNamespace
++    record_usage_login_selection(provider, "saved")
++    monkeypatch.setattr(auth_mod, "clear_provider_auth", lambda _: True)
++    monkeypatch.setattr(auth_mod, "_should_reset_config_provider_on_logout", lambda _: False)
++    auth_mod.logout_command(SimpleNamespace(provider=provider))
++    assert get_usage_login_selection(provider) is None
++
++
++# ------------------------------------------------------------------------------- profile scope
++
++
++@pytest.fixture()
++def profile_env(tmp_path, monkeypatch):
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    global_root = tmp_path / ".hermes"
++    global_root.mkdir(exist_ok=True)
++    profile_dir = global_root / "profiles" / "coder"
++    profile_dir.mkdir(parents=True)
++    (profile_dir / "config.yaml").write_text("{}\n")
++    monkeypatch.setenv("HERMES_HOME", str(profile_dir))
++    return {"global": global_root, "profile": profile_dir}
++
++
++def test_record_under_named_profile_writes_profile_store_only(profile_env):
++    write_credential_pool("anthropic", _anthropic_rows())
++    record_usage_login_selection("anthropic", "ant1")
++
++    assert _raw_store(profile_env["profile"])[USAGE_LOGIN_SELECTION_KEY]["anthropic"]["credential_id"] == "ant1"
++    assert not (profile_env["global"] / "auth.json").exists()
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant1"
++
++
++def test_profile_without_own_pool_reads_global_selection_only_then(profile_env):
++    global_store = {
++        "version": 1, "providers": {},
++        "credential_pool": {"anthropic": _anthropic_rows()},
++        USAGE_LOGIN_SELECTION_KEY: {"anthropic": {"credential_id": "ant3", "login_at": "2026-10-01T00:00:00Z"}},
++    }
++    (profile_env["global"] / "auth.json").write_text(json.dumps(global_store))
++
++    # The profile borrows the global pool for anthropic, so it borrows the pointer too.
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant3"
++    assert resolve_usage_login_entry("anthropic")["id"] == "ant3"
++
++    # Once the profile owns anthropic rows, the global pointer is invisible (profiles are islands).
++    write_credential_pool("anthropic", _anthropic_rows()[:1])
++    assert get_usage_login_selection("anthropic") is None
++
++
++def test_profile_logout_masks_borrowed_global_selection(profile_env):
++    global_store = {"version": 1, "providers": {}, "credential_pool": {"anthropic": _anthropic_rows()},
++                    USAGE_LOGIN_SELECTION_KEY: {"anthropic": {"credential_id": "ant3", "login_at": "2026-10-01T00:00:00Z"}}}
++    path = profile_env["global"] / "auth.json"
++    path.write_text(json.dumps(global_store))
++    assert clear_usage_login_selection("anthropic")
++    assert get_usage_login_selection("anthropic") is None
++    assert json.loads(path.read_text()) == global_store
++
++
++# --------------------------------------------------------------------------- CLI login paths
++
++
++def _patch_anthropic_login(monkeypatch, login):
++    """``_OAUTH_ADD_SPECS`` binds the login callable at import; swap the spec, not the module name."""
++    from dataclasses import replace
++    from hermes_cli import auth_commands
++
++    monkeypatch.setitem(auth_commands._OAUTH_ADD_SPECS, "anthropic",
++                        replace(auth_commands._OAUTH_ADD_SPECS["anthropic"], login=login))
++
++
++def test_cli_auth_add_anthropic_pkce_records_new_entry(_isolated_home, monkeypatch, capsys):
++    from hermes_cli import auth_commands
++
++    write_credential_pool("anthropic", _anthropic_rows())
++    _patch_anthropic_login(monkeypatch, lambda args: {
++        "access_token": "fixture-fresh-access", "refresh_token": "fixture-fresh-refresh", "expires_at_ms": 1})
++    monkeypatch.setattr(auth_commands, "label_from_token", lambda token, fallback: "f_design@example.com")
++
++    class _Args:
++        provider = "anthropic"
++        auth_type = "oauth"
++        label = ""
++        priority = None
++
++    auth_commands.auth_add_command(_Args())
++
++    rows = read_credential_pool("anthropic")
++    new = next(r for r in rows if r["access_token"] == "fixture-fresh-access")
++    selection = get_usage_login_selection("anthropic")
++    assert selection["credential_id"] == new["id"]
++    assert selection["account_email"] == "f_design@example.com"
++    assert selection["surface"] == "cli"
++    # The pre-existing pooled entries kept their ids; no raw secret echoed to the terminal.
++    assert {r["id"] for r in rows} >= {"ant0", "ant1", "ant2", "ant3"}
++    assert "fixture-fresh" not in capsys.readouterr().out
++
++
++def test_cli_auth_add_api_key_records_entry(_isolated_home):
++    from hermes_cli.auth_commands import auth_add_command
++
++    class _Args:
++        provider = "openai-codex"
++        auth_type = "api-key"
++        api_key = "sk-codex-manual"
++        label = "work"
++        priority = None
++
++    auth_add_command(_Args())
++    new = next(r for r in read_credential_pool("openai-codex") if r["label"] == "work")
++    assert get_usage_login_selection("openai-codex")["credential_id"] == new["id"]
++
++
++def test_cli_login_failure_does_not_record(_isolated_home, monkeypatch):
++    from hermes_cli import auth_commands
++
++    record_usage_login_selection("anthropic", "ant0")
++
++    def _boom(args):
++        raise auth_mod.AuthError("denied")
++
++    _patch_anthropic_login(monkeypatch, _boom)
++
++    class _Args:
++        provider = "anthropic"
++        auth_type = "oauth"
++        label = ""
++        priority = None
++
++    with pytest.raises(SystemExit):
++        auth_commands.auth_add_command(_Args())
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant0"
++
++
++def test_cli_auth_remove_clears_pointer_only_for_removed_row(_isolated_home):
++    from hermes_cli.auth_commands import auth_remove_command
++
++    write_credential_pool("anthropic", _anthropic_rows())
++    record_usage_login_selection("anthropic", "ant1")
++
++    class _Args:
++        provider = "anthropic"
++        target = "ant0"
++
++    auth_remove_command(_Args())
++    assert get_usage_login_selection("anthropic")["credential_id"] == "ant1"
++
++    _Args.target = "ant1"
++    auth_remove_command(_Args())
++    assert get_usage_login_selection("anthropic") is None
++
++
++def test_singleton_login_records_device_code_row(_isolated_home):
++    """``hermes model``/``hermes setup`` Codex logins save the singleton; the pool row seeded from
++    it (``source == device_code``) keeps its id across re-logins and is what the pointer names."""
++    auth_mod._save_codex_tokens({"access_token": "codex-a", "refresh_token": "codex-a-r"})
++    first = record_singleton_login_selection("openai-codex", surface="cli")
++    row = next(r for r in read_credential_pool("openai-codex") if r["source"] == "device_code")
++    assert first["credential_id"] == row["id"]
++
++    auth_mod._save_codex_tokens({"access_token": "codex-b", "refresh_token": "codex-b-r"})
++    second = record_singleton_login_selection("openai-codex", surface="cli")
++    assert second["credential_id"] == row["id"]
++    assert get_usage_login_selection("openai-codex")["credential_id"] == row["id"]
++
++    # No singleton at all -> nothing recorded, no exception.
++    assert record_singleton_login_selection("xai-oauth", surface="cli") is None
++    assert get_usage_login_selection("xai-oauth") is None
+diff --git a/tests/hermes_cli/test_web_usage_login_selection.py b/tests/hermes_cli/test_web_usage_login_selection.py
+new file mode 100644
+index 00000000000..a5b59e8374f
+--- /dev/null
++++ b/tests/hermes_cli/test_web_usage_login_selection.py
+@@ -0,0 +1,191 @@
++"""Desktop (dashboard backend) native login routes record the last-successful-login selection.
++
++Two native Desktop paths create or re-authenticate a credential without the CLI:
++``_codex_full_login_worker`` (OpenAI Codex device-code login; saves the singleton that
++``load_pool`` surfaces as the ``device_code`` pool row) and ``POST /api/credentials/pool``
++(API-key add). Both must stamp ``usage_login_selection`` in the REQUESTED profile's store, and
++a cancelled/failed login must not.
++"""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++import httpx
++import pytest
++from fastapi.testclient import TestClient
++
++from hermes_cli.web_server import _SESSION_TOKEN, app
++import hermes_cli.web_routers.oauth as _rt_oauth
++import hermes_cli.web_server_oauth as _web_server_oauth
++from hermes_cli.auth_usage_selection import USAGE_LOGIN_SELECTION_KEY
++
++client = TestClient(app)
++HEADERS = {"X-Hermes-Session-Token": _SESSION_TOKEN}
++
++
++@pytest.fixture()
++def homes(tmp_path, monkeypatch):
++    monkeypatch.setattr(Path, "home", lambda: tmp_path)
++    root = tmp_path / "hermes"  # not Path.home()/.hermes: the auth seat belt refuses that path
++    root.mkdir()
++    monkeypatch.setenv("HERMES_HOME", str(root))
++    profile_home = root / "profiles" / "coder"
++    profile_home.mkdir(parents=True)
++    (profile_home / "config.yaml").write_text("{}\n")  # identity marker
++    return {"root": root, "coder": profile_home}
++
++
++def _selection(home: Path, provider: str):
++    store = json.loads((home / "auth.json").read_text())
++    return store.get(USAGE_LOGIN_SELECTION_KEY, {}).get(provider)
++
++
++def _codex_clients(access_token: str):
++    class _Resp:
++        def __init__(self, status_code, payload):
++            self.status_code = status_code
++            self._payload = payload
++
++        def json(self):
++            return self._payload
++
++    class _Client:
++        def __init__(self, *args, **kwargs):
++            pass
++
++        def __enter__(self):
++            return self
++
++        def __exit__(self, *args):
++            return False
++
++        def post(self, url, **kwargs):
++            if url.endswith("/deviceauth/usercode"):
++                return _Resp(200, {"device_auth_id": "device-auth-id", "interval": 0, "user_code": "CODEX-1234"})
++            return _Resp(200, {"authorization_code": "auth-code", "code_verifier": "verifier"})
++
++    class _TokenClient(_Client):
++        def post(self, url, **kwargs):
++            return _Resp(200, {"access_token": access_token, "refresh_token": f"{access_token}-r"})
++
++    return iter([_Client, _Client, _TokenClient])
++
++
++def _run_codex_worker(monkeypatch, access_token: str, profile: str = "coder") -> None:
++    from hermes_cli import web_server as ws
++
++    clients = _codex_clients(access_token)
++    monkeypatch.setattr(httpx, "Client", lambda *a, **k: next(clients)(*a, **k))
++    monkeypatch.setattr(ws.time, "sleep", lambda *_a, **_k: None)
++    sid, _ = _rt_oauth._new_oauth_session("openai-codex", "device_code", profile=profile)
++    try:
++        _rt_oauth._codex_full_login_worker(sid)
++        assert _web_server_oauth._oauth_sessions[sid]["status"] == "approved"
++    finally:
++        _web_server_oauth._oauth_sessions.pop(sid, None)
++
++
++def test_codex_device_login_records_device_code_row_in_launch_profile(homes, monkeypatch):
++    from hermes_cli.auth import read_credential_pool
++
++    _run_codex_worker(monkeypatch, "codex-at-1", profile=None)
++
++    selection = _selection(homes["root"], "openai-codex")
++    assert selection is not None
++    row = next(r for r in read_credential_pool("openai-codex") if r["source"] == "device_code")
++    assert selection["credential_id"] == row["id"]
++    assert selection["surface"] == "desktop"
++    assert selection["source"] == "device_code"
++    assert "codex-at-1" not in json.dumps(selection)
++    assert not (homes["coder"] / "auth.json").exists()
++
++    # A second Desktop login (another account) re-points the SAME seeded row with a fresh stamp.
++    monkeypatch.setattr("hermes_cli.auth_usage_selection._utc_now_z", lambda: "2099-01-01T00:00:00Z")
++    _run_codex_worker(monkeypatch, "codex-at-2", profile=None)
++    again = _selection(homes["root"], "openai-codex")
++    assert again["credential_id"] == row["id"]
++    assert again["login_at"] == "2099-01-01T00:00:00Z"
++
++
++def test_codex_device_login_for_named_profile_scopes_pointer_to_that_profile(homes, monkeypatch):
++    """A named profile's Codex singleton is its own grant: the pointer lands in the profile store,
++    never the launch profile's. Pre-existing pool behaviour: a profile without its own
++    ``credential_pool.openai-codex`` rows never materializes the seeded row, so its id is not
++    stable across loads — the recorded ``source`` lets ``resolve_usage_login_entry`` still name
++    the (unique) singleton row."""
++    from hermes_cli.web_server_profiles import _profile_scope
++    from hermes_cli.auth_usage_selection import get_usage_login_selection, resolve_usage_login_entry
++
++    _run_codex_worker(monkeypatch, "codex-at-1", profile="coder")
++
++    assert not (homes["root"] / "auth.json").exists()
++    selection = _selection(homes["coder"], "openai-codex")
++    assert selection["surface"] == "desktop" and selection["source"] == "device_code"
++    with _profile_scope("coder"):
++        assert get_usage_login_selection("openai-codex") == selection
++        resolved = resolve_usage_login_entry("openai-codex")
++    assert resolved is not None and resolved["source"] == "device_code"
++    assert "access_token" not in resolved
++    assert "codex-at-1" not in json.dumps(resolved)
++
++
++def test_codex_device_login_cancelled_before_save_records_nothing(homes, monkeypatch):
++    from hermes_cli import auth as auth_mod
++    from hermes_cli import web_server as ws
++
++    clients = _codex_clients("codex-at-x")
++    monkeypatch.setattr(httpx, "Client", lambda *a, **k: next(clients)(*a, **k))
++    monkeypatch.setattr(ws.time, "sleep", lambda *_a, **_k: None)
++    saved = []
++    monkeypatch.setattr(auth_mod, "_save_codex_tokens", lambda tokens: saved.append(tokens))
++    sid, sess = _rt_oauth._new_oauth_session("openai-codex", "device_code", profile="coder")
++    sess["cancelled"] = True
++    try:
++        _rt_oauth._codex_full_login_worker(sid)
++    finally:
++        _web_server_oauth._oauth_sessions.pop(sid, None)
++    assert saved == []
++    assert not (homes["coder"] / "auth.json").exists()
++
++
++def test_pool_api_key_post_records_selection_for_profile(homes):
++    resp = client.post("/api/credentials/pool?profile=coder", headers=HEADERS,
++                       json={"provider": "anthropic", "api_key": "«redacted:sk-…»", "label": "desk"})
++    assert resp.status_code == 200, resp.text
++
++    store = json.loads((homes["coder"] / "auth.json").read_text())
++    row = next(r for r in store["credential_pool"]["anthropic"] if r["label"] == "desk")
++    selection = store[USAGE_LOGIN_SELECTION_KEY]["anthropic"]
++    assert selection["credential_id"] == row["id"]
++    assert selection["surface"] == "desktop"
++    assert "sk-ant" not in json.dumps(selection)
++    assert not (homes["root"] / "auth.json").exists()
++
++
++def test_pool_delete_clears_pointer_only_for_removed_row(homes):
++    client.post("/api/credentials/pool?profile=coder", headers=HEADERS,
++                json={"provider": "anthropic", "api_key": "sk-ant-one", "label": "one"})
++    client.post("/api/credentials/pool?profile=coder", headers=HEADERS,
++                json={"provider": "anthropic", "api_key": "sk-ant-two", "label": "two"})
++    store = json.loads((homes["coder"] / "auth.json").read_text())
++    rows = store["credential_pool"]["anthropic"]
++    two = next(r for r in rows if r["label"] == "two")
++    assert store[USAGE_LOGIN_SELECTION_KEY]["anthropic"]["credential_id"] == two["id"]
++
++    listed = client.get("/api/credentials/pool?profile=coder", headers=HEADERS).json()
++    entries = next(p for p in listed["providers"] if p["provider"] == "anthropic")["entries"]
++    idx_one = next(e["index"] for e in entries if e["label"] == "one")
++    resp = client.delete(f"/api/credentials/pool/anthropic/{idx_one}?profile=coder", headers=HEADERS)
++    assert resp.status_code == 200, resp.text
++    assert _selection(homes["coder"], "anthropic")["credential_id"] == two["id"]
++
++    listed = client.get("/api/credentials/pool?profile=coder", headers=HEADERS).json()
++    entries = next(p for p in listed["providers"] if p["provider"] == "anthropic")["entries"]
++    idx_two = next(e["index"] for e in entries if e["label"] == "two")
++    resp = client.delete(f"/api/credentials/pool/anthropic/{idx_two}?profile=coder", headers=HEADERS)
++    assert resp.status_code == 200, resp.text
++    cleared = _selection(homes["coder"], "anthropic")
++    assert cleared.get("credential_id") is None
++    assert cleared["cleared_at"]
+\ No newline at end of file

@@ -35,5 +35,5 @@ description: 이 컴퓨터의 AI 작업 환경(Claude Code·Codex·Hermes의 전
 
 ## 업데이트 명령 안내
 
-- 사용자가 업데이트를 묻거나 Hermes가 새 정식 버전을 알리면(Desktop 알림, `hermes update --check`, `omh update --dry-run`) `hermes/docs/model-routing.md` "업데이트" 절의 블록을 파일에서 읽어 그대로 한 복사 블록으로 준다. Hermes(stable 채널)와 OMH(`--channel stable --version <최신 태그>`)를 항상 함께 최신 정식 릴리스로 올린다. 기억으로 재구성한 짧은 블록이나 옵션 없는 `omh update`(설치 기록이 main zip이면 preview를 받음)는 주지 않는다.
+- 사용자가 업데이트를 묻거나 Hermes가 새 정식 버전을 알리면(Desktop 알림, `hermes update --check`) Agent-setup 루트의 `bash hermes/scripts/update.sh` 한 줄을 준다. 이 스크립트가 Hermes·OMH 최신 정식 버전을 실행 시점에 조회해 함께 올리고, 커스텀 설정과 수정 묶음을 다시 적용한다. Desktop의 업데이트 버튼(`--keep-stash`)이나 옵션 없는 `omh update`(항상 preview를 받음)는 안내하지 않는다. 새 Hermes 태그용 수정 묶음이 없어 스크립트가 멈추면 수정 묶음을 새 태그로 옮긴다.
 - 블록 앞에 `hermes update --check`와 OMH 최신 태그로 확인한 현재→새 버전을 한 줄로 적는다. 새 Hermes 태그용 패치가 `hermes/patches/hermes-agent/`에 없으면 4단계 `no_patch`에서 멈춘다고 미리 알린다. 같은 블록이 README "Hermes·OMH 업데이트" 절에도 있으므로 블록을 고칠 때 두 곳을 함께 고친다.

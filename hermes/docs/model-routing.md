@@ -126,51 +126,26 @@ omh model-chains show --json
 
 ## 업데이트
 
-Hermes와 OMH는 아래 블록 하나로 함께 최신 정식 릴리스로 갱신하고, Hermes 본체·provider-usage에는 이 사용자의 수정 묶음(`hermes/patches/`)을 다시 적용한다. Hermes 공식 설치본은 `stable` 채널(최신 `vX.Y.Z` 릴리스 커밋)을 따르고, `hermes update --check`의 `Update channel: stable`로 확인한다. 실행 중인 Hermes 작업이 끝난 뒤 Hermes Desktop을 ⌘Q로 종료하고 터미널에 한 번에 붙여넣는다. `set -e`는 괄호 안에만 적용되어 실패한 단계에서 멈춘다. Hermes나 OMH에 새 정식 버전이 나오면 AI가 이 블록을 그대로 안내한다(옵션 없는 `omh update`로 줄이지 않는다).
+Hermes와 OMH를 최신 정식 릴리스로 올리고 이 사용자의 수정 사항을 다시 맞추는 명령은 하나다. 실행 중인 Hermes 작업이 끝나면 Hermes Desktop을 ⌘Q로 종료하고 터미널 앱에서 실행한다.
 
 ```bash
-(
-  set -e
-  AGENT_SETUP="$HOME/Downloads/Coding/personal/Agent-setup"   # 이 컴퓨터의 Agent-setup 체크아웃
-
-  printf '\n[1/5] 업데이트 예정 확인\n'
-  hermes update --check
-  hermes update --plan
-
-  printf '\n[2/5] Hermes 백업·업데이트·로컬 수정 재적용\n'
-  hermes update --backup
-
-  printf '\n[3/5] OMH 최신 정식 릴리스로 업데이트\n'
-  OMH_LATEST=$(curl -fsSL https://api.github.com/repos/rlaope/oh-my-hermes/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
-  printf 'OMH %s\n' "$OMH_LATEST"
-  omh update --channel stable --version "$OMH_LATEST"
-
-  printf '\n[4/5] 우리 수정 묶음 확인·설치 상태 점검\n'
-  python3 "$AGENT_SETUP/hermes/scripts/apply_local_patches.py" --apply
-  omh doctor
-  hermes doctor
-
-  printf '\n[5/5] 게이트웨이 재시작 및 상태 확인\n'
-  hermes gateway restart
-  hermes gateway status
-  hermes --version
-  omh --version
-
-  printf '\n완료. Hermes Desktop을 다시 켜세요.\n'
-)
+bash "$AGENT_SETUP/hermes/scripts/update.sh"   # AGENT_SETUP = 이 컴퓨터의 Agent-setup 체크아웃
 ```
 
-- `hermes update --backup`은 설정·대화 백업을 만들고, Hermes 본체의 로컬 수정을 stash에 보관한 뒤 새 버전 위에 재적용한다. 재적용 질문에는 사용자가 동의한다. 재적용 충돌이 나면 멈추고 stash를 보존한 채 충돌 파일을 검토한다.
-- `apply_local_patches.py --apply`는 각 체크아웃의 릴리스 태그에 맞는 패치(`hermes/patches/<대상>/<태그>.patch`)를 확인한다. `applied`면 수정이 들어 있는 상태이고, `applicable`이면 적용한다. `no_patch`(새 태그용 패치 없음)나 `conflict`가 나오면 블록이 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 새 Hermes 버전에 옮겨줘"라고 요청한다. AI는 이전 태그 패치를 새 버전에 맞춰 적용·시험한 뒤 아래 명령으로 새 태그 패치를 저장한다.
+Agent-setup 루트에서는 `bash hermes/scripts/update.sh`로 실행한다. `--dry-run`은 단계별 명령과 확인한 값(설치·최신 버전, 실제 omh 경로)만 출력하고, `--check`는 버전과 사용자 지정 상태만 보고한다. 업데이트가 게이트웨이를 재시작하므로 Hermes 안의 터미널에서는 실제 실행을 거부한다.
+
+- 버전: Hermes와 OMH 모두 GitHub `releases/latest` 리다이렉트에서 실행 시점의 최신 정식 태그를 읽는다. Hermes는 stable 채널에서 `hermes update --backup --yes`로 올린다. OMH는 PATH의 `omh`가 실제로 실행하는 설치본으로 `omh update --channel stable --version <최신>`을 실행한다. `omh`는 `OMH_VERSION` 환경변수를 읽지 않고, 옵션 없는 `omh update`는 preview(main.zip)를 받는다.
+- 유지와 재적용: 시작 전에 모델 체인 사용자 지정, Hermes 설정(model·fallback·delegation·스킬 폴더·플러그인·메모리·Aside·updates), SOUL 관리 블록, 사용자 스킬, 한국어 트리거 팩, 패치 상태를 `$TMPDIR`에 기록한다. 업데이트 뒤 Hermes 수정 묶음(`apply_local_patches.py --apply`), 소스 호환 패치 두 개, SOUL 관리 블록, 한국어 트리거 팩, provider-usage 표시를 다시 맞추고 `omh doctor`·`hermes doctor`를 실행한다. 이어서 시작 전 기록과 비교한 유지·변경·없어짐 표를 출력하고 게이트웨이를 재시작한 뒤 최종 버전을 보여준다. 항목별 저장 위치와 업데이트 때 동작은 [사용자 지정 항목과 업데이트](omh-and-agent-setup.md#사용자-지정-항목과-업데이트)에 있다.
+- 멈추는 경우: Agent-setup에 새 Hermes 태그용 패치(`hermes/patches/hermes-agent/<태그>.patch`)가 없으면 아무것도 바꾸기 전에 멈춘다. 업데이트 뒤 패치 적용 결과가 `no_patch`·`conflict`여도 그 단계에서 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 Hermes <태그>에 옮겨줘"라고 요청한다. AI는 이전 태그 패치를 새 버전에 맞춰 적용·시험한 뒤 아래 명령으로 새 태그 패치를 저장하고, 사용자는 같은 명령을 다시 실행한다. Hermes 채널이 stable 이외이거나, 업데이트 뒤 버전이 최신과 다르거나, SOUL.md의 관리 블록을 직접 고친 경우에도 멈춘다.
 
   ```bash
   cd ~/.hermes/hermes-agent && cp .git/index "$TMPDIR/idx" && GIT_INDEX_FILE="$TMPDIR/idx" git add -A && GIT_INDEX_FILE="$TMPDIR/idx" git diff --cached --binary HEAD > "$AGENT_SETUP/hermes/patches/hermes-agent/$(git describe --tags --exact-match).patch"
   ```
 
   provider-usage는 `dashboard/`·`tests/` 경로만 같은 방식으로 저장한다(`desktop/plugin.js`는 `configure_provider_usage.py`가 따로 맞춘다).
-- `--keep-stash`는 재적용을 건너뛰고 수정을 stash에 남긴다. 로컬 수정을 새 버전에 맞춰 직접 다시 합칠 때만 쓴다.
-- `omh update --channel stable --version <최신>`은 GitHub 최신 정식 릴리스의 wheel로 명령 패키지와 워크플로를 함께 갱신하고 설치 기록을 `stable` 채널로 남긴다. 옵션 없는 `omh update`는 설치 기록의 패키지 주소를 다시 쓰므로, 기록이 main 브랜치 zip이면 preview 빌드를 받는다. `~/.omh/routing/model-chains.json`의 사용자 지정 분류는 유지되고, 기본값을 쓰는 분류는 새 기본 체인을 따른다.
+- stash: 이전 업데이트가 남긴 `hermes-update-autostash` stash는 목록만 보여주고 그대로 둔다. Hermes Desktop의 업데이트 버튼은 `--keep-stash`로 로컬 수정을 stash에 남기고 다시 적용하지 않으므로, 업데이트는 이 명령으로 한다.
+- 이전 OMH venv(`~/.local/share/omh/venv`): 업데이트와 점검이 성공하고, PATH의 `omh`가 generation 설치본을 실행하며, 이 venv를 가리키는 명령·프로세스가 없을 때 휴지통으로 옮긴다. 조건이 남아 있으면 이유를 출력하고 그대로 둔다. curl 설치기로 업데이트하면 이 venv가 다시 생긴다.
 - 갱신 뒤 Agent-setup 루트에서 `python3 scripts/check_releases.py`로 저장소 고정값이 최신 정식 릴리스와 같은지 확인한다. `behind`가 나온 항목은 고정값·사본·문서를 함께 올린다.
-- 점검 경고 중 선택 기능(Docker, OpenRouter, image_gen 등)의 `⚠`와 OMH doctor의 `plugin_loader_observed`·`plugin_runtime_observed`는 터미널 점검에서 Hermes 실행을 관측하지 못했다는 표시다. 재시작 후 Desktop 새 세션에서 OMH 도구 호출이 되면 정상이다. `차단` 항목과 실패한 명령은 해결한 뒤 진행한다.
+- 점검 경고 중 선택 기능(Docker, OpenRouter, image_gen 등)의 `⚠`와 OMH doctor의 `plugin_loader_observed`·`plugin_runtime_observed`는 터미널 점검에서 Hermes 실행을 관측하지 못했다는 표시다. 재시작 뒤 Desktop 새 세션에서 OMH 도구 호출이 되면 정상이다. 점검이 실패하면 명령은 종료 코드 2로 끝나고 이전 OMH venv를 옮기지 않는다.
 
-갱신 후 `omh model-chains show --json`으로 12개 분류의 `origin`과 체인을 [라우팅 비교표](../../docs/model-routing-comparison.md)와 대조하고, Hermes 설정의 fallback·스킬 폴더 등록을 확인한다. 소스 호환 패치 두 개는 미리보기로 확인하고 필요한 경우에만 적용한다. Hermes Desktop 새 세션에서 플러그인 로딩, 실제 위임 모델, 계정 선택·사용량 표시를 확인한다.
+갱신 뒤 Hermes Desktop 새 세션에서 플러그인 로딩, 실제 위임 모델, 계정 선택·사용량 표시를 확인한다.
