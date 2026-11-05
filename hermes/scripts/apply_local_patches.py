@@ -7,7 +7,10 @@ holds this user's customizations. Default is a read-only report:
 
   applied     the checkout already contains the patch
   applicable  the patch applies cleanly; rerun with --apply
-  conflict    the patch does not apply; port it to the new release first
+  conflict    the patch does not apply to the current tree. With --apply the
+              current edits are parked in a named stash and the patch is applied
+              to the clean release tree; conflict remains only when the patch
+              does not fit the release itself (port it first)
   no_patch    no patch exists for the checkout's release tag
 
   python3 hermes/scripts/apply_local_patches.py            # report
@@ -57,6 +60,32 @@ def status(name, checkout):
     return {**row, 'status': 'conflict', 'detail': check.stderr.strip()[-800:]}
 
 
+def reapply_on_clean_tree(name, checkout, row):
+    """Recover a checkout whose local edits differ from the tag's patch.
+
+    `hermes update` restores the previous release's edits on top of the new code.
+    When those edits differ slightly from the patch saved for the new tag, neither
+    the forward nor the reverse check passes. The tag's patch is the source of
+    truth: park the current edits in a named stash (kept as a backup, never
+    dropped), apply the patch to the clean release tree, and put the edits back
+    unchanged if the patch still does not apply.
+    """
+    label = f'agent-setup-before-{row["tag"]}-patch'
+    pushed = git(checkout, 'stash', 'push', '--include-untracked', '-m', label)
+    if pushed.returncode != 0:
+        return {**row, 'status': 'conflict', 'detail': pushed.stderr.strip()[-800:]}
+    stashed = 'No local changes' not in pushed.stdout
+    check = git(checkout, 'apply', '--check', row['patch'])
+    if check.returncode == 0 and git(checkout, 'apply', row['patch']).returncode == 0:
+        result = status(name, checkout)
+        if stashed:
+            result['backup_stash'] = label
+        return result
+    if stashed:
+        git(checkout, 'stash', 'pop')
+    return {**row, 'status': 'conflict', 'detail': check.stderr.strip()[-800:]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--home', type=Path, default=Path(os.environ.get('HERMES_HOME', Path.home() / '.hermes')))
@@ -69,6 +98,8 @@ def main():
             result = git(checkout, 'apply', row['patch'])
             row = status(name, checkout) if result.returncode == 0 else {**row, 'status': 'apply_failed',
                                                                           'detail': result.stderr.strip()[-800:]}
+        elif args.apply and row['status'] == 'conflict':
+            row = reapply_on_clean_tree(name, checkout, row)
         rows.append(row)
     print(json.dumps(rows, ensure_ascii=False, indent=2))
     return 0 if all(r['status'] == 'applied' for r in rows) else 1

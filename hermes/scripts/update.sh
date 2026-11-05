@@ -179,7 +179,7 @@ if [[ $MODE == run ]]; then
     printf '%s\n' "$PATCH_OUT" | sed 's/^/  │ /'
   else
     printf '%s\n' "$PATCH_OUT" | sed 's/^/  │ /'
-    die "수정 묶음을 새 버전에 적용하지 못했습니다(no_patch 또는 conflict). Hermes v${HERMES_INSTALLED}는 설치되었고 로컬 수정은 git stash에 보관되어 있습니다. AI에게 \"Agent-setup 수정 묶음을 Hermes v${HERMES_INSTALLED}에 옮겨줘\"라고 요청한 뒤 이 명령을 다시 실행하세요."
+    die "새 버전용 수정 묶음이 없거나 새 릴리스 코드와 맞지 않습니다(no_patch 또는 conflict). Hermes v${HERMES_INSTALLED}는 설치되었고 지금 있는 로컬 수정은 그대로 두었습니다. AI에게 \"Agent-setup 수정 묶음을 Hermes v${HERMES_INSTALLED}에 옮겨줘\"라고 요청한 뒤 이 명령을 다시 실행하세요."
   fi
 else
   info "현재 v$HERMES_INSTALLED 상태(읽기 전용 보고):"

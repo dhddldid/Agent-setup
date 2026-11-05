@@ -56,6 +56,51 @@ class LocalPatchTests(unittest.TestCase):
         self.assertEqual(row['status'], 'no_patch')
         self.assertEqual(row['available'], ['v1.0.0'])
 
+    def run_apply(self):
+        home = Path(self.temp.name) / 'home'
+        home.mkdir(exist_ok=True)
+        old_targets = alp.targets
+        alp.targets = lambda _home: {'demo': self.repo}
+        old_argv = sys.argv
+        sys.argv = ['apply_local_patches.py', '--home', str(home), '--apply']
+        try:
+            from io import StringIO
+            from contextlib import redirect_stdout
+            out = StringIO()
+            with redirect_stdout(out):
+                code = alp.main()
+            return code, json.loads(out.getvalue())[0]
+        finally:
+            alp.targets = old_targets
+            sys.argv = old_argv
+
+    def stash_list(self):
+        return subprocess.run(['git', '-C', str(self.repo), 'stash', 'list'],
+                              capture_output=True, text=True).stdout
+
+    def test_restored_older_edits_are_replaced_by_the_tag_patch(self):
+        # hermes update restored the previous release's slightly different edits
+        (self.repo / 'a.txt').write_text('one\ntwo (old wording)\n')
+        (self.repo / 'new.txt').write_text('untracked from old edits\n')
+        self.assertEqual(alp.status('demo', self.repo)['status'], 'conflict')
+        code, row = self.run_apply()
+        self.assertEqual(code, 0)
+        self.assertEqual(row['status'], 'applied')
+        self.assertEqual((self.repo / 'a.txt').read_text(), 'one\ntwo\n')
+        self.assertIn('agent-setup-before-v1.0.0-patch', self.stash_list())
+
+    def test_patch_that_does_not_fit_the_release_keeps_current_edits(self):
+        git(self.repo, 'tag', '-d', 'v1.0.0')
+        (self.repo / 'a.txt').write_text('upstream rewrote this\n')
+        git(self.repo, 'commit', '-qam', 'upstream')
+        git(self.repo, 'tag', 'v1.0.0')
+        (self.repo / 'a.txt').write_text('upstream rewrote this\nmine\n')
+        code, row = self.run_apply()
+        self.assertEqual(code, 1)
+        self.assertEqual(row['status'], 'conflict')
+        self.assertEqual((self.repo / 'a.txt').read_text(), 'upstream rewrote this\nmine\n')
+        self.assertEqual(self.stash_list(), '')
+
 
 if __name__ == '__main__':
     unittest.main()
