@@ -118,6 +118,10 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
                         subprocess.run([*GIT,'-C',str(old_checkout),'fetch','--quiet','--depth','1','origin',recorded['commit']],check=True)
                         subprocess.run([*GIT,'-C',str(old_checkout),'checkout','--quiet','--detach',recorded['commit']],check=True)
                         checkouts[old_key] = old_checkout
+                    old_path = checkouts[old_key]/Path(*PurePosixPath(recorded['path']).parts)
+                    if not old_path.is_file():
+                        results[name] = 'modified_copy_preserved'
+                        continue
                     old_source = source_folder(checkouts[old_key],recorded['path'])
                     if current != folder_snapshot(old_source,source=True):
                         results[name] = 'modified_copy_preserved'

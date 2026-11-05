@@ -197,6 +197,8 @@ bash scripts/update_claude_codex.sh
 - OMH 최신 정식 태그를 조회하고, 저장소 사본(`shared/skills/omh/`)과 버전이 다르면 공식 태그 원본에서 다시 가져온다.
 - CLI와 설정 폴더가 모두 있는 실행기에만 적용한다. Claude Code는 기록된 프리셋으로 설치기를 다시 실행하고, Codex는 관리 지침과 공통 스킬 설치기를 실행한다. 외부 스킬은 실행기별 스킬 폴더에서 최신 정식판으로 갱신하고 설명 조정을 다시 적용한다.
 - 전후 OMH 사본 버전, 실행기별 스킬 수, 전역 지침 SHA256을 표로 보여준다. 사용자가 고친 설치본은 보존하고 충돌로 보고하며, 이때 명령은 실패 종료 코드로 끝난다.
+- Codex `~/.codex/AGENTS.md`는 관리 구간만 새 지침으로 바꾸고 끝의 개인 구간을 유지한다(`codex/scripts/merge_codex_agents.py`, 교체 전 백업). Aside CLI 업데이트가 `aside-browser` 스킬을 진입점 스텁으로 바꿔 두었으면 백업한 뒤 공통 원본으로 되돌린다.
+- 최신 정식판에서 빠진 외부 스킬은 설치된 사본을 그대로 두고 `missing_upstream_preserved`로 보고한다.
 - `--dry-run`은 실행할 명령과 현재 값만, `--check`는 현재 상태만 보여준다.
 
 ## 저장 데이터 보존
