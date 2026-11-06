@@ -6,7 +6,7 @@
 |---|---|---|
 | Claude Code | 242 | 공통 49 + OMH 153 + codex + 외부 39 |
 | Codex | 241 | 공통 49 + OMH 153 + 외부 39 |
-| Hermes | 130 + OMH 153 | Hermes 공식 57 + 공통 34 + 외부 39 + OMH 153 |
+| Hermes | 131 + OMH 153 | Hermes 공식 57 + 공통 34 + Hermes 전용 1(dag-ulw-notes) + 외부 39 + OMH 153 |
 
 ## 1. 공통 스킬과 AI 전용 스킬 (51)
 

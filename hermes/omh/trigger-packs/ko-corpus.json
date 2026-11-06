@@ -1,0 +1,927 @@
+{
+  "schema_version": "ko_routing_corpus/v1",
+  "cases": [
+    {
+      "text": "모든문서를보고 우리기능표를만들어서 하나하나체크했으면 그렇게 인프라만들어주면돼",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "그럼 바꿔서해 막힌다고 계속시도하지말고뭐하는거야",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "추천대로진행",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "회원가입 로그인부터 일반채팅, 판단질문, 지식그래프, 온톨로지 과정을 설계에 맞게 개발해줘",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "메일 가져오기, 파일 업로드, 검색 기능 개발해줘",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "병렬로 구현해줘",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "진행해 언능만들자",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "추천하는대로하고. 어 다진행해",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "추천대로진행, 해야할것이 지금 안되서 문제가되서그런거야?",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "1단계를 구현하고 실제 Azure에 배포해 사용자 흐름까지 확인한다. 범위는 가입·Google 로그인, 개인·공유 Workspace, 초대, 구성원 권한, Owner 넘기기, 탈퇴다. 0단계에서 남은 항목도 함께 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "0단계(기반)를 구현하고 실제 Azure에서 동작을 확인한다. 백엔드 골격을 만들고 PostgreSQL 스키마를 적용하고 Cosmos 저장 계층을 만들고 GitHub Actions로 배포한 뒤 읽기·쓰기를 확인한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "병렬 레인(2단계 파일·대화 가져오기): 지정 범위를 worktree에서 구현하고 테스트해 레인 브랜치에 커밋한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "병렬 레인(3단계 지식그래프·온톨로지 고리): 지정 범위를 worktree에서 구현하고 테스트해 레인 브랜치에 커밋한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "Android/web 앱의 디자인을 사용자가 고른 레퍼런스에 맞춰 다시 정하고, 새 로고, 라이트/다크 토큰, 모션그래픽을 구현하고 검증하라.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "회사 안 행정 공간 여러 개와 외부 협업자 게스트 회사 역할을 구현하고, 테스트·독립 리뷰·두 계정 로컬 브라우저 QA·운영 마이그레이션·배포·문서 갱신까지 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "운영자가 고객 회사를 정지·재개하는 기능을 구현하고, 테스트·독립 리뷰·로컬 브라우저 QA·운영 마이그레이션·배포·운영 확인·문서 갱신까지 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "화면으로 할 수 있는 일을 연결한 AI(MCP)로도 할 수 있게 만들고, 회사 구성원 관리(초대·역할·내보내기)를 화면과 AI 양쪽에 넣은 뒤 독립 리뷰·운영 배포·운영 확인까지 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "회사 주 소유자 1명 구조를 구현하고 기본 회사 이름을 바꾼 뒤, 독립 리뷰·운영 마이그레이션·배포·운영 확인까지 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "항차 화면 3단계: 신 ODR에 항목별 허용오차를 구현하고, BDN 대조 표 칸 폭 문제를 고친 뒤 시연 두 회사로 검증·커밋한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "항차 화면 통합: 항차 상태 집계 반영, 정박 ROB 불일치 원인 진단·처리, 실제 시연 두 회사 보고서로 로컬 화면 확인, 문서 갱신까지 끝낸다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "신 ODR 백엔드: 밀도 단위 변환, BDN 참고 항목과 보고서에 항차 화면용 생성 기능을 구현·테스트·커밋한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "운영 PoC 잔액·거래 확인 화면이 느려진 원인을 확정하고, 출금이 늘어도 빠르게 고친 뒤 로컬 검증·커밋·푸시한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "CMS PoC 대시보드가 숫자·그래프를 낼 때 출금 원본 전체를 읽지 않고 미리 모아 둔 합계 표에서만 읽도록 바꾸고, 로컬에서 검증·커밋·푸시한다.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "그냥 명령줄만넣으면완벽하게설치하고 사용될수있도록해. 제대로 내커스텀과 omh를제대로쓸수있도록해 표도제대로만들어놓고 pycoding-prompt, agent-setup 어딘가에는 올바르게 다작성되어있어야해.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "조회수나 영상 너가조사한것 그렇게선택한이유 어떻게해서올린것을 틈틈히 문서화해서 결국 나중에보면 맞는것들로 갈수있는 구조를만들어",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "무언가를할떄 pycoding-prompt, agent-setup이나 모두영어로해야한다면영어로하고 나한테알려줄떄는한글로하고 한글버전도만들어놔야지.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "모두진행 1번그렇고 2번 권한도 없애 3번 어모두진행하고브리핑해 리소스들만들고 설계는 내가다시할거야",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "앱3개를 동시에 돌려도되나? 여기서 ? 그러면 두 앱 모두 진행",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "기타루틴설치하고 기타루틴 업데이트해서 아에달라졌으니까. 업데이트하고 출시까지 하도록해.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "개발을 잘이어붙여서 회원 가입로그인부터 일반채팅, 판단질문, 지식그래프, 온톨로지 의과정들을모두거치고 일반,판단 답변에서도 온톨로지나 지식그래프가 쓰여서 더 사용자를잘이해해서 알맞는 답변을해주는것인데 그러면어떻게차근차근할계획일까 ?",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "5도권 그걸 우리 앱에맞게 재디자인해서 보여주줘야하지않을까? 기존 CAGED 5폼은 유지해놓고 새롭게 루틴하나더만들어서 하는거야.",
+      "kind": "multi",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ],
+      "split": "train"
+    },
+    {
+      "text": "이제 더어떤개발을해야하지",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "한글로이야기해줭",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "md로만들어뭐하는거야",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "진행해",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "진행",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "좋네진행해",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그렇게하자 만들어 그러면",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "진행하고있어 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "우리가앱개발이어디까지됐떠라",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "개발마지막건에대해서 알려줘 현황",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "현재홈개발에는 뭘위해 그렇게개발해놓은거지",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그리고고객사관리에 QA 보관은 우리 개발테스트로 보관한거지 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "지금뭐하고있고 우리가개발속도를 빠르게하려면어떡할까? 지금초반이라 오래걸리는거야?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "리소스가다르면 죄다 새로만들어야하는거야 .",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "진행중이라며 ? 어디갔어 명령어가져와",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "지금로컬돌아가는거있어 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "지금작업이뭐뭐되고있지 어디프로젝트의 어떤채팅",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "자이제 헤르메스에서 실행중인거없지 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그러한내용도 readme 에써둬 궁금할수있잖아",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "링크도줘야지",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "주소알려줘 나도보게",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "마크다운지원안함",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "카카오톡은 텍스트임.",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "안건은 옆으로줄세우는게아니라 하나씪 개행해서해야지",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그 회칙뺴고",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "헤르메스만껏다키면돼 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "omh 어ㅏㅂ데이트하면 모델라우팅이 스스로바뀌나 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "우리가 ODR이전의결과와 ODR검사결과가좀다른거같은데 다를수밖에없는이유는 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그폴더 줘봐",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "odr템플릿 샘플있었나",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "설명은뭐라했었어 ? api사용한다고했어 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "어적용해",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "비고가너무간단해, 지워야하는지 내가판단을할수가없어.",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "직접니가확인하고, 패키지이름이 검색이랑상관이없으면 그대로 해놓고해도될거같아. 내 핸드폰에는설치했냐 ?",
+      "kind": "small",
+      "split": "train"
+    },
+    {
+      "text": "그럼 여러기능 나눠서 다 해줘",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "가입부터 알림까지 단계별로 붙이자",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "목록, 상세, 저장 기능 전부만들어",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "검색이랑 즐겨찾기랑 공유까지 이어붙여서 해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "여러 화면을 하나씩 만들고 연결하자",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "그럼 첫단계부터 마지막까지 구현해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "세 기능 같이넣고 테스트까지 다해줘",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "결제, 취소, 환불 기능을 순서대로해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "기획부터 구현까지 전부 진행하자",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "앱 여러개 각각 수정하고 확인해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "입력하고 저장하고 불러오기까지 이어붙여서 만들어",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "여러 작업 단계별로 나눠서 마무리해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "로그인, 목록, 알림 다 해줘",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "설계부터 배포까지 한번에 진행해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "권한이랑 초대랑 탈퇴 기능 다붙여",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "이기능저기능 여러개라 나눠서해줘",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "그럼 구현하고 검증하고 설명까지 전부해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "초기화부터 복구까지 단계별로 만들어",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "동기화, 백업, 복원 전부 개발해",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "여러 기능 이어붙여서 돌아가게하자",
+      "kind": "multi",
+      "split": "train",
+      "group": "casual-generalization-v2",
+      "expect_any": [
+        "dag-ulw",
+        "ultrawork",
+        "ultragoal",
+        "ulw-work",
+        "ulw-loop"
+      ]
+    },
+    {
+      "text": "그럼 제목만 바꿔",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "오타하나 고쳐줘",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "이문장 짧게해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "그럼 색깔만 바꾸자",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "버튼위치좀 옮겨",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "아이콘 하나만넣어",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "여러 기능이란 말이뭔데",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "단계별로라는 단어 지워",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "처음부터 다시 설명해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "그럼 이줄만 수정해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "이거 저장은어떻게해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "전부 몇개야",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "로그인 어디서해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "이어붙여서가 무슨뜻이야",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "목록만 보여줘",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "한줄로 다 써줘",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "이름을 알림으로해",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "그럼 링크하나 줘",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "저 오타부터 고쳐",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    },
+    {
+      "text": "제목을 다 해줘로바꿔",
+      "kind": "small",
+      "split": "train",
+      "group": "casual-generalization-v2"
+    }
+  ]
+}

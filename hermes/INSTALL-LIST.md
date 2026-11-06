@@ -2,7 +2,7 @@
 
 `H`는 `${HERMES_HOME:-$HOME/.hermes}`다. 기본은 `~/.hermes/`, 이름 있는 프로필은 `~/.hermes/profiles/<이름>/`이다. `$(brew --prefix)`는 설치 대상인 Apple Silicon에서 보통 `/opt/homebrew`다. npm·uv·Go 실행 파일 위치는 각 관리자의 설정을 따른다.
 
-비-OMH 스킬 91개를 기준으로 한다. 공식 원본 57개와 Agent-setup 공통 스킬 34개다. 공통 스킬은 도구·기준 12개(desktop-app-provisioning, gam-memory, codegraph-context, aside-browser, coding-code-review, coding-maintenance, agent-setup-maintenance, humanize-korean, humanizer, shadcn, shadcn-lint, logo-design)와 Hermes 작업 교훈 공개본 22개다. 공통 스킬은 `skills/`에 Agent-setup `shared/skills/`와 같은 내용으로 둔다. 스킬 문서는 설치하지만 CLI·라이브러리·서비스 권한은 해당 작업을 사용할 때 준비한다. 공식 스킬은 설치 시점에 조회한 Hermes 최신 정식 태그의 공식 원본을 설치한다. OMH 스킬은 OMH 설치기로 별도 관리한다.
+비-OMH 스킬 92개를 기준으로 한다. 공식 원본 57개, Agent-setup 공통 스킬 34개, Hermes 전용 보조 스킬 1개(dag-ulw-notes)다. 공통 스킬은 도구·기준 12개(desktop-app-provisioning, gam-memory, codegraph-context, aside-browser, coding-code-review, coding-maintenance, agent-setup-maintenance, humanize-korean, humanizer, shadcn, shadcn-lint, logo-design)와 Hermes 작업 교훈 공개본 22개다. 공통 스킬은 `skills/`에 Agent-setup `shared/skills/`와 같은 내용으로 둔다. 스킬 문서는 설치하지만 CLI·라이브러리·서비스 권한은 해당 작업을 사용할 때 준비한다. 공식 스킬은 설치 시점에 조회한 Hermes 최신 정식 태그의 공식 원본을 설치한다. OMH 스킬은 OMH 설치기로 별도 관리한다.
 
 | 종류 | 항목 | 용도 | 설치 기준·추가 준비 | 일반 설치 경로 | 추가 도구·설정 경로 |
 |---|---|---|---|---|---|
@@ -13,7 +13,7 @@
 | 앱 | Chrome·Edge·Safari | 기존 로그인 브라우저 활용 | 사용하는 브라우저만; 프로필 가져오기는 지원 여부 확인 | `/Applications/` | `~/Library/Application Support/Google/Chrome/`, `~/Library/Application Support/Microsoft Edge/`, Safari는 OS 관리 |
 | 확장·스킬팩 | OMH | 작업 분류·라우팅·검증 지침 | 필수; 공식 install·setup | `~/.omh/`; `~/.local/share/omh/` | Hermes 등록 `H/plugins/omh/`; 스킬 실제 경로는 `skills.external_dirs` 확인 |
 | 업데이트 스크립트 | update.sh | Hermes·OMH·provider-usage·외부 스킬을 실행 시점의 최신 정식 릴리스로 올리고 사용자 지정을 다시 맞춤 | 업데이트할 때 Agent-setup 루트에서 `bash hermes/scripts/update.sh`; Hermes Desktop 업데이트 버튼 대신 사용 | Agent-setup 체크아웃 | `scripts/update.sh`, `scripts/update_helpers.py`; [업데이트](docs/model-routing.md#업데이트) |
-| OMH 사용자 설정 | 한국어 트리거 팩 | 한국어 작업 요청을 `dag-ulw`·`ultrawork` 등 OMH 흐름에 연결 | 필수; `scripts/install_omh_trigger_pack.py --apply`, 확인은 `--check` | `~/.omh/routing/trigger-packs/ko.json` | 원본 `omh/trigger-packs/ko.json` |
+| OMH 사용자 설정 | 한국어 트리거 팩 | "메일 가져오기, 파일 업로드, 검색 기능 개발해줘"처럼 여러 부분을 만드는 한국어 일상 요청을 `dag-ulw` 등 OMH 흐름에 연결하고, 작은 요청은 흐름 없이 바로 처리 | 필수; `scripts/install_omh_trigger_pack.py --apply`, 확인은 `--check`; 회귀 측정은 `omh/trigger-packs/evaluate.py` | `~/.omh/routing/trigger-packs/ko.json` | 원본 `omh/trigger-packs/ko.json`; 실제 요청 회귀 문장 `omh/trigger-packs/ko-corpus.json`; `update.sh`가 설치 직후 라우팅 점검 실행 |
 | Hermes 본체 수정 | 수정 묶음 | 계정 선택·사용량 표시·모델별 계정 쿨다운·턴 복구 | 필수; 최신 정식 릴리스 위에 `scripts/apply_local_patches.py --apply` | `H/hermes-agent/` 작업 트리 | 원본 `patches/hermes-agent/<태그>.patch`; 새 태그용 패치가 없으면 업데이트 전에 이전 |
 | 런타임 호환 패치 | 자식 fallback 순서·추론 | GPT 시작 자식의 Opus 마지막 순서와 작업별 추론 유지 | `scripts/update.sh`가 업데이트마다 다시 적용; 따로 적용할 때는 미리보기·적용·새 프로세스 검증 | 실제 소스의 `agent/chat_completion_helpers.py`, `tools/delegate_tool_config.py` | `scripts/configure_delegation_reasoning.py`, `scripts/configure_gpt_fallback.py`; [적용 기준](docs/model-routing.md) |
 | Hermes 플러그인 | provider-usage | GPT·Claude 사용량·잔여 한도·리셋 시간 | 필수; 최신 정식 릴리스 태그로 설치·활성화·[GPT·Claude만 표시](docs/provider-usage.md)·실제 조회. `scripts/update.sh`가 업데이트마다 최신 정식 태그로 올림 | `H/plugins/provider-usage/` | Desktop UI `H/desktop-plugins/provider-usage/`; 표시 어댑터 `scripts/configure_provider_usage.py`; 인증은 사용자의 로컬 저장소; 수정 묶음 `patches/provider-usage/<태그>.patch`; 새 태그용 패치가 없으면 업데이트 전에 이전 |
@@ -21,9 +21,10 @@
 | Hermes 플러그인 | discord-project-sidebar | Discord 세션을 Desktop 프로젝트 아래에 표시 | 선택; Discord 사용 시 [연동 안내](docs/discord.md) | `H/plugins/discord-project-sidebar/` | 원본 `discord/plugins/`; 프로젝트 지도는 `discord.channel_prompts` |
 | Hermes 플러그인 | desktop-discord-reports | Desktop 작업 결과를 프로젝트 채널 스레드로 보고 | 선택; Discord 사용 시 | `H/plugins/desktop-discord-reports/` | 원본 `discord/plugins/`; 스레드 대응 `H/state/desktop-discord-threads.json` |
 | 예약 스크립트 | discord-project-hygiene | 3일 경과 스레드·Desktop 채팅 삭제(그룹별 최근 3개 유지) | 선택; Discord 사용 시 no-agent cron | `H/scripts/discord-project-hygiene.py` | 원본 `discord/scripts/`; 봇 스레드 관리 권한 |
+| 예약 스크립트 | parallel-gap-check | 3일마다 대화 기록에서 한 작업만 맡긴 위임과 `dag-ulw`를 불러오지 않은 위임 세션을 찾고, 한국어 요청 라우팅을 다시 점검해 발견한 내용만 알림(LLM 호출 비용 0) | 필수; `scripts/install_parallel_gap_check.py --apply --deliver <대화 정리 작업과 같은 Discord 채널>`, 옵션 없이 실행하면 미리보기; no-agent cron `every 72h`, 등록 확인은 `hermes cron list` | `H/scripts/parallel-gap-check.py` | 점검기 Agent-setup `scripts/check_parallel_gaps.py`(직접 실행은 `history --days 3`, `routing`); 보고서 `H/reports/parallel-gaps/`; 등록 뒤 저장소 위치 유지 |
 | Hermes UI 확장 | OMH Desktop·TUI | 상태·작업 표시 | OMH setup에서 선택한 UI 연결 | `H/desktop-plugins/omh/`; `H/tui-widgets/omh-status.mjs` | 설치 여부·표시는 별도 확인 |
 | 프로젝트 지침 | AGENTS.md | 저장소 작업 규칙 | Agent-setup 루트와 Hermes 폴더 지침 | `Agent-setup/AGENTS.md`, `Agent-setup/hermes/AGENTS.md` | 다른 프로젝트는 각 프로젝트 루트 |
-| 전역 규칙 | 공통 작업 원칙, OMH 워크플로 사용, Aside 브라우저 직접 조작, 문서 전달 | 작업 원칙·표현·프로젝트 지침·CodeGraph; 작업 형태로 OMH 흐름 선택·그 안에서 개인 스킬 사용·위임 전 OMH 라우팅; Aside `repl` 직접 조작; 문서 전달 시 폴더 카드 제공·앱 자동 실행 금지 | `scripts/install_global_rules.py --apply`로 추가·이전 배포본 교체; 직접 고친 구간은 보존하고 차이를 `H/.agent-setup/diffs/`에 남김 | `H/SOUL.md` | 원본 `templates/common-rules.md`(Agent-setup `shared/rules/`에서 생성), `templates/omh-workflow.md`, `templates/aside-browser.md`, `templates/document-delivery.md`; 브라우저 프로필은 프로젝트 규칙 |
+| 전역 규칙 | 공통 작업 원칙, OMH 워크플로 사용, Aside 브라우저 직접 조작, 문서 전달 | 작업 원칙·표현·프로젝트 지침·CodeGraph·여러 부분 작업은 첫 위임 전에 나누고 준비된 부분을 한 번에 위임; 작업 형태로 OMH 흐름 선택·여러 부분 작업은 Route Hint 없이 `dag-ulw`·`dag-ulw-notes` 로드·그 안에서 개인 스킬 사용·위임 전 OMH 라우팅; Aside `repl` 직접 조작; 문서 전달 시 폴더 카드 제공·앱 자동 실행 금지 | `scripts/install_global_rules.py --apply`로 추가·이전 배포본 교체; 직접 고친 구간은 보존하고 차이를 `H/.agent-setup/diffs/`에 남김 | `H/SOUL.md` | 원본 `templates/common-rules.md`(Agent-setup `shared/rules/`에서 생성), `templates/omh-workflow.md`, `templates/aside-browser.md`, `templates/document-delivery.md`; 브라우저 프로필은 프로젝트 규칙 |
 | 스킬 | apple-notes | Apple 메모 읽기·검색·작성 | 공식 원본; memo; macOS Automation 승인 | `H/skills/apple/apple-notes/` | `$(brew --prefix)/bin/memo` |
 | 스킬 | apple-reminders | Apple 미리 알림 관리 | 공식 원본; remindctl; 미리 알림 승인 | `H/skills/apple/apple-reminders/` | `$(brew --prefix)/bin/remindctl` |
 | 스킬 | findmy | 나의 찾기 기기·AirTag 확인 | 공식 원본; 나의 찾기·iCloud; 화면 권한 | `H/skills/apple/findmy/` | macOS 기본 앱 |
@@ -42,6 +43,7 @@
 | 스킬 | p5js | p5.js 생성형 그래픽·인터랙션 | 공식 원본; 브라우저·p5.js; 영상 출력은 Node·ffmpeg | `H/skills/creative/p5js/` | 프로젝트 HTML·`node_modules/` |
 | 스킬 | popular-web-designs | 실제 디자인 시스템 참고 화면 | 공식 원본; 별도 설치 없음; 작업에 맞는 기본 도구 | `H/skills/creative/popular-web-designs/` | — |
 | 스킬 | songwriting-and-ai-music | 작사·작곡 방향·음악 생성 요청 | 공식 원본; 음악 생성 서비스는 선택 | `H/skills/creative/songwriting-and-ai-music/` | 서비스 계정; 별도 로컬 도구 없음 |
+| 스킬 | dag-ulw-notes | 여러 부분 작업을 첫 위임 전에 나누고 준비된 부분을 한 번에 시작하는 `dag-ulw` 보조 규칙, `omh_dag` 정의 형식 | Hermes 전용 로컬 스킬; `scripts/install_skills.py`로 설치, 미리보기로 확인; `dag-ulw`(OMH)와 함께 로드 | `H/skills/ultrawork/dag-ulw-notes/` | 원본 `skills/dag-ulw-notes/` |
 | 스킬 | desktop-app-provisioning | 앱 설치·브라우저 프로필 이전 | 일반화한 커스텀; macOS 설치·GUI 도구·OS 승인 | `H/skills/desktop-app-provisioning/` | `/Applications/`; `H/tools/` |
 | 스킬 | gam-memory | 과거 결정 회수·승인된 지식 저장 | Agent-setup 공통 스킬; GAM MCP 연결 필요 | `H/skills/gam-memory/` | GAM 공식 설치 경로; 기억 원본은 GAM Vault |
 | 스킬 | codegraph-context | CodeGraph로 코드 위치·호출 관계 좁히기 | Agent-setup 공통 스킬; CodeGraph MCP 연결 (Agent-setup 공통 도구) | `H/skills/codegraph-context/` | CodeGraph 공식 설치 경로; 색인은 각 Git 저장소 `.codegraph/` |

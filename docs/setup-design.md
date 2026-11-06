@@ -58,9 +58,9 @@ Agent-setup은 **AI 작업 환경** 설치 원본이다. 처음 쓰는 사람이
 |---|---|---|
 | Claude Code | `claude/skills/` | `codex`: GPT 항목·사용자 지정·독립 리뷰 때 Codex 플러그인으로 넘기고 결과 회수, 실패 시 다음 항목 |
 | Codex | — | 전용 스킬 없음 (공통 49개 + OMH 153개 + 외부 39개) |
-| Hermes | `hermes/manifest.json` | Hermes 공식 스킬 57개 + 공통 34개(도구·기준 12개와 Hermes 작업 교훈 공개본 22개), OMH |
+| Hermes | `hermes/manifest.json` | Hermes 공식 스킬 57개 + 공통 34개(도구·기준 12개와 Hermes 작업 교훈 공개본 22개) + Hermes 전용 `dag-ulw-notes`, OMH |
 
-설치 결과: Claude Code 242개(공통 49 + OMH 153 + codex + 외부 39), Codex 241개(공통 49 + OMH 153 + 외부 39), Hermes 130개(공식 57 + 공통 34 + 외부 39) + OMH 153개. 스킬별 표는 [스킬 표](skills.md).
+설치 결과: Claude Code 242개(공통 49 + OMH 153 + codex + 외부 39), Codex 241개(공통 49 + OMH 153 + 외부 39), Hermes 131개(공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 153개. 스킬별 표는 [스킬 표](skills.md).
 
 ### 선택 묶음
 

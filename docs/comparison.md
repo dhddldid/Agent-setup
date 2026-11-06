@@ -9,7 +9,7 @@
 | 라우팅 원본 | codex/11-working-method.md, codex/config/models.json | claude/routes/claude-code.json (실행기별 정책을 시험으로 대조) | hermes/routing-presets/*.json |
 | 위임 | Codex 네이티브 위임의 model·reasoning_effort (GPT 모델) | Claude 모델은 route-<분류>-<계열> 에이전트, GPT 모델은 Codex 플러그인 codex:codex-rescue | OMH 라우팅 + delegate_task |
 | fallback | 지정 조합을 쓸 수 없으면 제약 보고 | 전역 규칙에 따라 주 에이전트가 다음 항목으로 넘김 | 분류별 후보·전역·자식 공통 fallback + 소스 호환 패치 |
-| 스킬 | 241개 (공통 49 + OMH 153 + 외부 39), ~/.agents/skills/ | 242개 (공통 49 + OMH 153 + codex + 외부 39), ~/.claude/skills/ | 130개 (공식 57 + 공통 34 + 외부 39) + OMH, $HERMES_HOME/skills/ |
+| 스킬 | 241개 (공통 49 + OMH 153 + 외부 39), ~/.agents/skills/ | 242개 (공통 49 + OMH 153 + codex + 외부 39), ~/.claude/skills/ | 131개 (공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH, $HERMES_HOME/skills/ |
 | 기억·코드 탐색 | GAM·CodeGraph MCP, Ollama 임베딩 | GAM·CodeGraph MCP | GAM·CodeGraph MCP + Hermes 메모리 |
 | 전역 지침 | $CODEX_HOME/AGENTS.md·working-method.md·models.json | ~/.claude/AGENTS.md 관리 구간(+ CLAUDE.md의 `@AGENTS.md`), ~/.claude/agent-setup/routing.json | $HERMES_HOME/SOUL.md 관리 구간 |
 | 브라우저 | Aside repl 직접 조작 규칙 | Aside repl 직접 조작 규칙 | Aside repl 직접 조작 규칙 |

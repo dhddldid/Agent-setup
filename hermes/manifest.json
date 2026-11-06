@@ -224,6 +224,17 @@
       "local_modified": false
     },
     {
+      "name": "dag-ulw-notes",
+      "description": "여러 부분 작업을 첫 위임 전에 나누고 준비된 부분을 동시에 시작하는 dag-ulw 보조 규칙",
+      "kind": "skill",
+      "source_kind": "local",
+      "source_path": "skills/dag-ulw-notes",
+      "install_path": "skills/ultrawork/dag-ulw-notes",
+      "extra_install": "",
+      "extra_path": "",
+      "local_modified": false
+    },
+    {
       "name": "gam-memory",
       "description": "GAM으로 과거 결정 회수·승인된 지식 저장",
       "kind": "skill",

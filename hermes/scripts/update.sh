@@ -236,6 +236,9 @@ if [[ $MODE == run ]]; then
 fi
 act "$PY" "$AGENT_SETUP/hermes/scripts/install_omh_trigger_pack.py" --apply \
   || die "한국어 트리거 팩을 설치하지 못했습니다. $OMH_HOME/routing/trigger-packs/ko.json을 확인하세요."
+# 라우팅 누락은 업데이트를 계속 진행하면서 경고로 남긴다.
+act "$PY" "$AGENT_SETUP/scripts/check_parallel_gaps.py" routing \
+  || warn '병렬 라우팅 점검에서 누락 또는 실행 오류가 발견되었습니다. 위 결과를 확인하세요.'
 act "$PY" "$AGENT_SETUP/hermes/scripts/configure_provider_usage.py" --home "$HERMES_HOME" --apply \
   || die 'provider-usage 표시 수정을 적용하지 못했습니다. 플러그인 파일 변경 여부를 확인하세요.'
 

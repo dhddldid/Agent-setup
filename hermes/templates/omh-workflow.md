@@ -10,6 +10,7 @@ Before acting on a work request in any language, choose the overall workflow by 
 Load the chosen workflow with `skill_view` and follow it. Before claiming completion, load and follow `omh-verification-gate`.
 
 - Apply custom and project skills inside the chosen workflow for project rules, accounts, tools, and checks; have each node and lane load the relevant skills.
+- For multi-part work in any language, load `dag-ulw` and `dag-ulw-notes` yourself without waiting for a Route Hint, and start it without asking permission to parallelize already-approved work.
 - When an OMH Route Hint or skill shortlist appears, load the hinted skill with `skill_view` before the first action; follow it or explain in one line why another workflow fits.
 - Call `omh_delegate_route` immediately before every `delegate_task` and follow its routing result.
 - Use `omh_todo` to record and update work with three or more steps.

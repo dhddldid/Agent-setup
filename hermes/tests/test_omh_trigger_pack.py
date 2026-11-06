@@ -36,7 +36,10 @@ class TriggerPackTests(unittest.TestCase):
             merged = json.loads(target.read_text(encoding='utf-8'))
             self.assertEqual(merged['skills']['dag-ulw'][0], custom['skills']['dag-ulw'][0])
             self.assertEqual(merged['skills']['code-review'], custom['skills']['code-review'])
-            self.assertEqual(merged['whole_phrase_only_tokens'], custom['whole_phrase_only_tokens'])
+            self.assertEqual(merged['whole_phrase_only_tokens']['code-review'], ['검토'])
+            for skill, tokens in json.loads(SOURCE.read_text(encoding='utf-8')).get(
+                    'whole_phrase_only_tokens', {}).items():
+                self.assertTrue(set(tokens) <= set(merged['whole_phrase_only_tokens'][skill]))
             self.assertEqual(run('--check').returncode, 0)
             stat = target.stat()
             self.assertEqual(run('--apply').returncode, 0)
@@ -105,8 +108,70 @@ class TriggerPackTests(unittest.TestCase):
         for skill, phrases in source['skills'].items():
             self.assertEqual(len(phrases), len(set(phrases)), skill)
             self.assertTrue(all(0 < len(phrase) <= 120 for phrase in phrases))
-            self.assertTrue(all(len(phrase.split()) >= 2 for phrase in phrases))
-            self.assertTrue({'병렬로', '끝까지', '해줘', '전부 반영해'}.isdisjoint(phrases))
+            self.assertTrue({'병렬로', '끝까지', '해줘', '전부 반영해', '개발해',
+                             '구현해', '만들어줘', '진행', '진행해'}.isdisjoint(phrases))
+        for skill in ('dag-ulw', 'ultrawork', 'ultragoal'):
+            self.assertTrue({'진행', '구현', '개발', '테스트', '문서'} <=
+                            set(source['whole_phrase_only_tokens'][skill]))
+
+    def test_korean_routing_corpus_schema_and_privacy(self):
+        corpus_path = SOURCE.with_name('ko-corpus.json')
+        corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
+        self.assertEqual(set(corpus), {'schema_version', 'cases'})
+        self.assertEqual(corpus['schema_version'], 'ko_routing_corpus/v1')
+        self.assertIsInstance(corpus['cases'], list)
+        counts = {'multi': 0, 'small': 0}
+        texts = set()
+        workflow_ids = {'dag-ulw', 'ultrawork', 'ultragoal', 'ulw-work', 'ulw-loop'}
+        for case in corpus['cases']:
+            with self.subTest(case=case):
+                self.assertIsInstance(case, dict)
+                self.assertIn(case['kind'], counts)
+                kind = case['kind']
+                counts[kind] += 1
+                required_keys = {'text', 'kind', 'split'}
+                if kind == 'multi':
+                    required_keys.add('expect_any')
+                self.assertEqual(set(case) - {'group'}, required_keys)
+                self.assertEqual(case['split'], 'train')
+                if 'group' in case:
+                    self.assertEqual(case['group'], 'casual-generalization-v2')
+                text = case['text']
+                self.assertIsInstance(text, str)
+                self.assertEqual(text, text.strip())
+                self.assertTrue(0 < len(text) <= 400)
+                self.assertRegex(text, '[가-힣]')
+                self.assertFalse(text.startswith('['))
+                self.assertNotIn(text, texts)
+                texts.add(text)
+                self.assertNotRegex(text, r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}')
+                self.assertNotRegex(text, r'/Users/|/home/|local-[0-9a-f]{24}|sk-[A-Za-z0-9]{16}')
+                if kind == 'multi':
+                    expected = case['expect_any']
+                    self.assertIsInstance(expected, list)
+                    self.assertTrue(expected)
+                    self.assertEqual(len(expected), len(set(expected)))
+                    self.assertTrue(set(expected) <= workflow_ids)
+        self.assertGreaterEqual(counts['multi'], 51)
+        self.assertGreaterEqual(counts['small'], 54)
+        added = [case for case in corpus['cases']
+                 if case.get('group') == 'casual-generalization-v2']
+        self.assertEqual(sum(case['kind'] == 'multi' for case in added), 20)
+        self.assertEqual(sum(case['kind'] == 'small' for case in added), 20)
+        for case in corpus['cases']:
+            if case['kind'] == 'multi':
+                self.assertTrue({'ulw-work', 'ulw-loop'} <= set(case['expect_any']))
+        required = {
+            '모든문서를보고 우리기능표를만들어서 하나하나체크했으면 그렇게 인프라만들어주면돼',
+            '이제 더어떤개발을해야하지',
+            '그럼 바꿔서해 막힌다고 계속시도하지말고뭐하는거야',
+            '추천대로진행',
+            '회원가입 로그인부터 일반채팅, 판단질문, 지식그래프, 온톨로지 과정을 설계에 맞게 개발해줘',
+            '메일 가져오기, 파일 업로드, 검색 기능 개발해줘',
+            '병렬로 구현해줘',
+            '한글로이야기해줭',
+        }
+        self.assertTrue(required <= texts)
 
 
 if __name__ == '__main__':

@@ -15,9 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     manifest = json.loads((ROOT / 'manifest.json').read_text())
     skills = manifest['skills']
-    assert len(skills) == 91 and len({s['name'] for s in skills}) == 91
+    assert len(skills) == 92 and len({s['name'] for s in skills}) == 92
     assert sum(s['source_kind'] == 'upstream' for s in skills) == 57
-    assert sum(s['source_kind'] == 'local' for s in skills) == 34
+    assert sum(s['source_kind'] == 'local' for s in skills) == 35
     for s in skills:
         for key in ['source_path', 'install_path']:
             p = Path(s[key])

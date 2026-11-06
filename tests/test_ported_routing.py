@@ -4,6 +4,9 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+HERMES_ONLY_SKILLS = {
+    "dag-ulw-notes": "Uses the Hermes-only omh_dag runtime for split-first orchestration.",
+}
 
 
 CLAUDE_COMMON = {
@@ -55,6 +58,8 @@ class PortedRoutingTests(unittest.TestCase):
             shared = ROOT / "shared/skills/core" / name
             if not shared.is_dir():
                 shared = ROOT / "shared/skills/packs/mac" / name
+            if name in HERMES_ONLY_SKILLS and not shared.is_dir():
+                continue
             hermes = ROOT / "hermes/skills" / name
             def tracked(root):
                 return sorted(p.relative_to(root) for p in root.rglob("*")

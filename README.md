@@ -124,7 +124,7 @@ Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각�
 | 항목 | Claude Code | Codex | Hermes |
 |---|---|---|---|
 | 모델 라우팅 | 12개 분류별 Claude 하위 에이전트 + GPT는 Codex 플러그인 | 12개 분류별 GPT 모델·추론 | OMH 프리셋 |
-| 스킬 | 242개 (공통 49 + OMH 153 + codex + 외부 39) | 241개 (공통 49 + OMH 153 + 외부 39) | 130개 (공식 57 + 공통 34 + 외부 39) + OMH 153 |
+| 스킬 | 242개 (공통 49 + OMH 153 + codex + 외부 39) | 241개 (공통 49 + OMH 153 + 외부 39) | 131개 (공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 153 |
 | 전역 지침 | `~/.claude/AGENTS.md` | `~/.codex/AGENTS.md` | `SOUL.md` 관리 구간 |
 | 코드 탐색 | CodeGraph | CodeGraph | CodeGraph |
 | 기억 | GAM | GAM | GAM + Hermes 메모리 |
@@ -180,6 +180,7 @@ bash hermes/scripts/update.sh
 
 - 실행 시점의 최신 정식 버전을 GitHub에서 읽어 Hermes(`hermes update --backup --yes`)와 OMH(`omh update --channel stable --version <최신>`)를 함께 올린다. provider-usage 플러그인도 최신 정식 태그로 올리고, 외부 스킬은 최신 정식판으로 갱신한 뒤 설명 조정을 다시 적용한다. 버전을 직접 적을 필요가 없다.
 - 업데이트 전후로 모델 체인·Hermes 설정·SOUL 관리 구간·사용자 스킬·한국어 트리거 팩·패치 상태를 비교해 표로 보여주고, Hermes 수정 묶음·호환 패치·SOUL 구간·트리거 팩·provider-usage 표시를 다시 맞춘 뒤 점검과 게이트웨이 재시작까지 한다.
+- 트리거 팩을 설치한 직후 한국어 요청 라우팅을 다시 점검한다. 여러 부분 요청이 `dag-ulw`를 받지 못하면 경고로 보여주고 업데이트를 계속한다.
 - 새 Hermes 태그용 수정 묶음이 `hermes/patches/hermes-agent/`에, 새 provider-usage 태그용 수정 묶음이 `hermes/patches/provider-usage/`에 없으면 아무것도 바꾸기 전에 멈춘다. 이때 AI에게 "Agent-setup 수정 묶음을 <대상> <태그>에 옮겨줘"라고 요청한 뒤 같은 명령을 다시 실행한다.
 - `--dry-run`은 실행할 단계와 확인한 값만, `--check`는 버전과 사용자 지정 상태만 보여준다.
 - Hermes Desktop의 업데이트 버튼은 Hermes 본체의 로컬 수정을 다시 적용하지 않으므로 쓰지 않는다.
@@ -224,6 +225,23 @@ python3 scripts/retention.py schedule     # macOS launchd 주간 작업 등록 (
 ```
 
 CodeGraph 색인을 찾을 폴더는 컴퓨터마다 `~/Library/Application Support/agent-setup/retention.json`의 `codegraph_roots`에 적는다. 주간 작업은 이 저장소 체크아웃 경로의 스크립트를 실행하므로, 저장소를 옮기면 `schedule`을 다시 실행한다.
+
+## 병렬 실행 누락 점검
+
+여러 부분으로 된 작업은 세 AI 모두 첫 위임 전에 부분을 나누고 준비된 부분을 한 번에 위임한다(공통 작업 원칙의 "여러 부분으로 된 작업" 절). Hermes에서는 한국어 트리거 팩과 `SOUL.md` 규칙이 이런 요청을 `dag-ulw`로 보낸다. [`scripts/check_parallel_gaps.py`](scripts/check_parallel_gaps.py)가 이 동작을 LLM 호출 없이 점검한다.
+
+| 점검 | 실행 시점 | 내용 |
+|---|---|---|
+| 라우팅 | Hermes 업데이트 때, 3일마다 | 실제 한국어 요청 회귀 문장의 OMH 추천 |
+| 실행 기록 | 3일마다 | 한 작업만 맡긴 위임, `dag-ulw`를 불러오지 않은 위임 세션 |
+
+```sh
+python3 scripts/check_parallel_gaps.py routing             # 라우팅 점검
+python3 scripts/check_parallel_gaps.py history --days 3    # 최근 3일 실행 기록 점검
+python3 hermes/scripts/install_parallel_gap_check.py       # 3일 주기 작업 미리보기 (--apply로 등록)
+```
+
+3일 주기 작업은 Hermes no-agent cron으로 실행되고, 발견한 내용이 있을 때만 대화 정리 작업과 같은 Discord 채널로 알린다. 상세는 [병렬 실행 누락 점검](hermes/docs/omh-and-agent-setup.md#병렬-실행-누락-점검)에 있다.
 
 ## 설치 뒤
 

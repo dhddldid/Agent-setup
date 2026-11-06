@@ -36,7 +36,7 @@ Hermes에서는 Agent-setup이 설치한 구성과 OMH가 설치한 구성이 �
 | Hermes 본체 수정 묶음 | `~/.hermes/hermes-agent` 작업 트리. 원본 `hermes/patches/hermes-agent/<태그>.patch`(현재 v0.22.2·v0.22.5·v0.22.7) | Hermes: 업데이트 전에 로컬 수정을 stash에 넣고, `--yes`면 자동으로 다시 적용한다. 다시 적용이 충돌하면 깨끗한 새 버전으로 두고 stash를 보관한다. Desktop 업데이트(`--keep-stash`)는 다시 적용하지 않는다. OMH: 건드리지 않는다 | `update.sh`가 `apply_local_patches.py --apply`를 실행한다. 새 태그용 패치가 없으면 아무것도 바꾸기 전에 멈추고, AI에게 패치 이전을 요청하라고 안내한다 | 계정 선택·사용량 표시·모델별 계정 쿨다운·턴 복구는 OMH 위임을 포함한 모든 Hermes 모델 호출에 적용된다 |
 | 호환 패치 2개 | `~/.hermes/hermes-agent`의 `agent/chat_completion_helpers.py`, `tools/delegate_tool_config.py` | 본체 수정 묶음과 같은 stash 동작. 2026-10-10 Desktop 업데이트로 빠졌다 | `update.sh`가 `configure_delegation_reasoning.py`·`configure_gpt_fallback.py --apply`를 실행한다 | OMH 분류가 정한 추론 강도를 위임 자식에 유지하고, GPT로 시작한 자식의 fallback 순서를 맞춘다 |
 | provider-usage | `~/.hermes/plugins/provider-usage`, `~/.hermes/desktop-plugins/provider-usage/plugin.js` | Hermes: 사용자 플러그인은 업데이트하지 않는다. OMH: 건드리지 않는다 | `update.sh`가 최신 정식 태그를 조회해 플러그인을 그 태그로 올린다. 로컬 수정은 이름 붙인 stash에 백업하고, `apply_local_patches.py`가 새 태그용 `patches/provider-usage/<태그>.patch`를 적용한 뒤 `configure_provider_usage.py --apply`와 Desktop 미러 복사를 한다. 새 태그용 패치가 없으면 바꾸기 전에 멈춘다 | OMH 체인이 쓰는 GPT·Claude 계정의 사용량·잔여 한도를 보여준다 |
-| 한국어 트리거 팩 | 원본 `hermes/omh/trigger-packs/ko.json`, 설치본 `~/.omh/routing/trigger-packs/ko.json` | Hermes: 건드리지 않는다. OMH: 사용자 팩을 읽기만 한다 | `update.sh`가 `install_omh_trigger_pack.py --apply`로 빠진 구문만 더한다. 사용자가 넣은 구문은 유지한다 | 한국어 문장으로 `dag-ulw`·`ultrawork` 등 9개 워크플로의 추천 점수를 올리고, 다른 힌트가 없을 때 `user_trigger_pack` Route Hint를 만든다 |
+| 한국어 트리거 팩 | 원본 `hermes/omh/trigger-packs/ko.json`, 설치본 `~/.omh/routing/trigger-packs/ko.json` | Hermes: 건드리지 않는다. OMH: 사용자 팩을 읽기만 한다 | `update.sh`가 `install_omh_trigger_pack.py --apply`로 빠진 구문만 더한다. 사용자가 넣은 구문은 유지한다. 이어서 `scripts/check_parallel_gaps.py routing`으로 실제 요청 회귀 문장을 다시 점검하고, 누락은 경고로 보여준 뒤 업데이트를 계속한다 | 한국어 문장으로 `dag-ulw`·`ultrawork` 등 워크플로의 추천 점수를 올리고, 다른 힌트가 없을 때 `user_trigger_pack` Route Hint를 만든다 |
 | GAM과 OMH 기억 | GAM: `global-memory` MCP와 GAM Vault. OMH 기억: `~/.omh/memory/`(`memory.provider: omh`) | Hermes: 건드리지 않는다. OMH: 업데이트가 기억 저장소를 쓰지 않는다 | 다시 적용할 필요 없음 | 프로젝트 결정·해결 경험은 GAM에 저장해 세 AI가 함께 쓰고, Hermes 실행 교훈은 `omh_memory`로 OMH 기억에 둔다 |
 
 ## 작업 흐름 선택
@@ -60,6 +60,34 @@ Hermes는 OMH 설치기가 플러그인과 워크플로 153개를 직접 설치�
 - `delegate_task` 직전에는 매번 `omh_delegate_route`를 호출한다. 세 단계 이상 작업은 `omh_todo`에 기록하고, 여러 에이전트를 쓰면 `omh_agent_board`로 관리한 뒤 `omh_run_summary`로 시간·토큰을 보고한다.
 - 준비한 계획·인계와 실제 실행·검증 결과를 나눠 보고하고, 사용자에게는 한국어로 보고한다.
 
+### 한국어 여러 부분 요청이 `dag-ulw`에 닿는 경로
+
+"회원가입 로그인부터 일반채팅, 지식그래프까지 설계에 맞게 개발해줘" 같은 요청은 두 장치로 `dag-ulw`에 닿는다. 주 장치는 3번 전역 규칙이고, 1·2번 트리거 팩은 팩에 든 표현과 비슷한 문장에서 Route Hint를 더하는 보조 장치다.
+
+1. 사용자 트리거 팩: OMH 플러그인의 Route Hint(`awareness_route_hint`)는 OMH 기본 규칙을 먼저 적용하고, 기본 규칙이 아무 흐름도 고르지 않은 문장에만 `~/.omh/routing/trigger-packs/ko.json`을 쓴다. 이때 라우터가 고른 흐름이 팩에 적힌 흐름과 같아야 힌트가 붙는다. 넓은 단어(`개발`·`진행` 등)는 전체 구문으로만 점수를 받아 작은 요청에는 힌트가 붙지 않는다.
+2. Route Hint: 위 조건을 통과하면 OMH가 그 턴에 `dag-ulw`·`ulw-work`·`ulw-loop` Route Hint를 붙이고, Hermes는 첫 행동 전에 그 흐름을 불러온다.
+3. 전역 규칙: Route Hint가 없거나 다른 흐름을 가리켜도 `SOUL.md`의 OMH 워크플로 구간이 여러 부분 작업에서 `dag-ulw`와 `dag-ulw-notes`를 직접 불러오게 한다. 공통 작업 원칙의 "여러 부분으로 된 작업" 절은 첫 위임 전에 부분 목록과 기다리는 대상을 적고, 준비된 부분을 한 번의 위임 호출로 시작하게 한다. 이 절은 Claude Code·Codex 전역 지침에도 같은 내용으로 들어간다.
+
+회귀 문장은 `hermes/omh/trigger-packs/ko-corpus.json`에 있다. 실제 대화에서 고른 문장과 같은 말투로 쓴 연습 문장을 합쳐 여러 부분 요청 51개, 작은 요청 54개다. `python3 hermes/omh/trigger-packs/evaluate.py`가 임시 OMH·Hermes 홈에서 각 문장의 실제 Route Hint를 판정한다(`ulw-work`·`ulw-loop`도 적중). 2026-11-06 측정값은 다음과 같다.
+
+| 문장 묶음 | 여러 부분 요청 적중 | 작은 요청 오탐 |
+|---|---|---|
+| 회귀 문장(팩 조정에 사용) | 46/51 | 0/54 |
+| 조정에 쓰지 않은 새 문장 두 묶음 | 0/10, 1/10 | 0/10, 0/10 |
+
+새 문장 적중률이 낮아서 평소 말투의 여러 부분 요청은 대부분 3번 전역 규칙이 받친다. 놓친 경우는 아래 3일 점검이 찾는다.
+
+### 병렬 실행 누락 점검
+
+`scripts/check_parallel_gaps.py`가 라우팅과 실제 실행을 각각 점검한다. Python 표준 라이브러리로 동작하고 LLM 호출 비용은 0이다.
+
+| 점검 | 시점 | 확인 내용 |
+|---|---|---|
+| `routing` | `update.sh`의 트리거 팩 설치 직후, 3일 주기 작업 | 회귀 문장 중 여러 부분 요청이 큰 흐름을 받지 못한 경우, 작은 요청이 큰 흐름을 받은 경우 |
+| `history --days 3` | 3일 주기 작업 | Hermes `state.db`(읽기 전용)의 위임 호출 수·작업 수, 한 작업만 맡긴 호출, 그 뒤 같은 턴에 이어진 위임, `dag-ulw`를 불러오지 않은 위임 세션. Claude Code·Codex 기록도 확인 가능한 범위에서 함께 센다 |
+
+3일 주기 작업은 `hermes/scripts/install_parallel_gap_check.py --apply`가 Hermes no-agent cron(`every 72h`)으로 등록한다. 알림 대상은 `--deliver`로 정하고 기본값은 `local`(cron 실행 기록)이다. 이 Mac에서는 대화 정리 작업과 같은 Discord 채널을 지정해 발견한 내용이 있을 때만 알리고, 보고서는 `$HERMES_HOME/reports/parallel-gaps/`에 남긴다. 한 작업만 맡긴 호출은 검토 대상이고, 분할 사유는 해당 대화 원문에서 판단한다.
+
 ### 바꾼 이유
 
 이전 규칙은 "사용자 스킬이 다루는 단계는 그 스킬, 나머지 단계는 OMH"였다. 사용자 스킬이 있는 작업에서는 OMH 흐름이 거의 쓰이지 않았다. 2026-11-05에 `~/.hermes/state.db`에 남은 기록을 보면 `omh_dag` 호출과 `ulw-work`·`ulw-loop`·`omh-verification-gate` 로드가 모두 0건이었고, OMH Route Hint를 따르지 않은 대화도 2건 이상 있었다. 한국어 문장은 OMH 기본 한국어 트리거 데이터에 `dag-ulw`·`ultrawork` 구문이 없어 이 흐름을 추천받지 못했다.
@@ -71,6 +99,12 @@ Hermes는 OMH 설치기가 플러그인과 워크플로 153개를 직접 설치�
 - 업데이트: `update.sh`가 업데이트 뒤 규칙과 트리거 팩을 다시 맞춘다.
 
 새 세션에서 Hermes가 실제로 흐름을 고르는지는 아직 관찰하지 않았다.
+
+2026-11-06에 다시 세 가지를 바꿨다. 최근 30일 기록에서 Hermes 위임 호출 75건 중 58건이 작업 하나만 맡겼고, 위임한 21개 세션 중 4개만 `dag-ulw`를 불러왔다. 실제 한국어 요청은 기존 트리거 팩의 긴 구문과 표현이 달라 `dag-ulw` 추천을 받지 못했다.
+
+- 한국어 트리거 팩: 실제 대화 문장으로 회귀 문장을 만들고 일상 표현을 더했다. 실제 Route Hint 기준 회귀 문장 적중은 31/51에서 46/51로 올랐고, 조정에 쓰지 않은 새 문장은 0/10·1/10이다. 사용자 결정(2026-11-06)으로 팩은 보조로 두고 전역 규칙과 3일 점검을 주 장치로 쓴다.
+- 규칙: 공통 작업 원칙에 "여러 부분으로 된 작업" 절을, OMH 워크플로 구간에 `dag-ulw`·`dag-ulw-notes` 직접 로드를 더했다. `dag-ulw-notes` 스킬을 저장소에 두고 설치 목록에 올렸다.
+- 점검: 업데이트 때 라우팅 점검, 3일마다 대화 기록 점검을 실행한다([병렬 실행 누락 점검](#병렬-실행-누락-점검)).
 
 ## 문서 언어
 
