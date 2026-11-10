@@ -59,39 +59,47 @@ Claude 후보는 `route-<분류>-<계열>` 하위 에이전트로 실행한다. 
 
 | 작업 분류 | 적용 작업 | Claude 넉넉형 · 기본 | GPT 넉넉형 | 추론 |
 |---|---|---|---|---|
-| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | Astra → Fable → Opus | Astra → Fable → Opus | `xhigh` |
-| `deep` | 깊은 구현·디버깅 | Sol → Fable → Opus | Sol → Fable → Opus | `high` |
-| `architect` | 아키텍처·시스템 경계 설계 | Fable → Astra → Opus | Fable → Astra → Opus | `xhigh` |
-| `unspecified-high` | 분류 밖의 복합 작업 | Opus | Opus | `medium` |
-| `unspecified-low` | 분류 밖의 단순 작업 | Opus | Opus | `low` |
-| `quick` | 좁은 탐색·빠른 확인 | Luna → Fable → Opus → Astra | Luna → Fable → Opus → Astra | `low` |
-| `writing` | 문서 작성·편집 | Opus → Sol | Sol → Opus | `medium` |
-| `visual-engineering` | 화면·프론트엔드 구현 | Fable → Opus → Astra | Fable → Astra → Opus | `high` |
-| `artistry` | 창의적 설계·시각 방향 | Fable → Opus → Astra | Fable → Astra → Opus | `high` |
-| `capable` | 일반 실행 | Fable → Opus → Sonnet → Astra | Fable → Astra → Opus → Sonnet | `medium` |
-| `simple-work` | 단순 실행 | Luna → Fable → Opus → Haiku 4.5 | Luna → Fable → Opus → Haiku 4.5 | `low` |
+| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | Astra | Astra → Fable → Opus | `xhigh` |
+| `deep` | 깊은 구현·디버깅 | Opus → Sol | Sol → Fable → Opus | `high` |
+| `architect` | 아키텍처·시스템 경계 설계 | Opus → Astra → Fable | Fable → Astra → Opus | `xhigh` |
+| `unspecified-high` | 분류 밖의 복합 작업 | Sol → Opus | Opus | `medium` |
+| `unspecified-low` | 분류 밖의 단순 작업 | Sol → Sonnet | Opus | `low` |
+| `quick` | 좁은 탐색·빠른 확인 | Luna → Haiku 5.5 | Luna → Fable → Opus → Astra | `low` |
+| `writing` | 문서 작성·편집 | Opus → Sonnet | Sol → Opus | `medium` |
+| `visual-engineering` | 화면·프론트엔드 구현 | Opus → Fable | Fable → Astra → Opus | `high` |
+| `artistry` | 창의적 설계·시각 방향 | Opus → Fable | Fable → Astra → Opus | `high` |
+| `capable` | 일반 실행 | Opus → Sol → Fable | Fable → Astra → Opus → Sonnet | `medium` |
+| `simple-work` | 단순 실행 | Luna → Haiku 5.5 | Luna → Fable → Opus → Haiku 5.5 | `low` |
 | `deep-work` | 길고 까다로운 복합 실행 | Opus → Sol | Opus → Sol | `max` |
 
 원본: [두 프리셋의 모델·순서·추론](claude/routes/claude-code.json). 설치와 실제 호출 확인은 [Claude Code 안내](claude/README.md#모델-라우팅)를 따른다.
 
 ### Hermes — OMH 분류별 위임
 
+Claude 넉넉형은 OMH 4.0.7 추천 순서·추론을 따르고 GPT·Claude가 아닌 후보만 뺀다(x-search는 Sol). 18개 분류를 모두 지정한다.
+
 OMH에서 작업 분류를 선택한 직후 `delegate_task`로 위임한다. GPT 후보는 `openai-codex`, Claude 후보는 `anthropic` 제공자에 연결한다. 선택한 Hermes 프로필의 라우팅을 적용하며, 외부 Codex·Claude Code 프로세스를 실행할 때는 해당 실행기의 정책을 따른다.
 
 | 작업 분류 | 적용 작업 | Claude 넉넉형 · 기본 | 추론 | GPT 넉넉형 | 추론 |
 |---|---|---|---|---|---|
-| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | Astra → Opus | `xhigh` | Astra → Opus | `xhigh` |
+| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | Astra | `xhigh` | Astra → Opus | `xhigh` |
 | `deep` | 깊은 구현·디버깅 | Opus → Sol | `high` | Sol → Opus | `high` |
-| `architect` | 아키텍처·시스템 경계 설계 | Opus → Astra | `xhigh` | Astra → Opus | `xhigh` |
+| `architect` | 아키텍처·시스템 경계 설계 | Opus → Astra → Fable | `xhigh` | Astra → Opus | `xhigh` |
 | `unspecified-high` | 분류 밖의 복합 작업 | Sol → Opus | `medium` | Opus | `medium` |
 | `unspecified-low` | 분류 밖의 단순 작업 | Sol → Sonnet | `low` | Opus | `low` |
-| `quick` | 좁은 탐색·빠른 확인 | Luna → Opus | `low` | Luna → Opus → Astra | `low` |
-| `writing` | 문서 작성·편집 | Opus → Sonnet → Sol | `medium` | Sol → Opus | `medium` |
-| `visual-engineering` | 화면·프론트엔드 구현 | Opus | `high` | Astra → Opus | `high` |
-| `artistry` | 창의적 설계·시각 방향 | Opus | `high` | Astra → Opus | `high` |
-| `capable` | 일반 실행 | Opus → Sol | `medium` | Astra → Opus → Sonnet | `medium` |
+| `quick` | 좁은 탐색·빠른 확인 | Luna → Haiku 5.5 | `low` | Luna → Opus → Astra | `low` |
+| `writing` | 문서 작성·편집 | Opus → Sonnet | `medium` | Sol → Opus | `medium` |
+| `visual-engineering` | 화면·프론트엔드 구현 | Opus → Fable | `high` | Astra → Opus | `high` |
+| `artistry` | 창의적 설계·시각 방향 | Opus → Fable | `high` | Astra → Opus | `high` |
+| `capable` | 일반 실행 | Opus → Sol → Fable | `medium` | Astra → Opus → Sonnet | `medium` |
 | `simple-work` | 단순 실행 | Luna → Haiku 5.5 | `low` | Luna → Opus → Haiku 4.5 | `low` |
 | `deep-work` | 길고 까다로운 복합 실행 | Opus → Sol | `max` | Opus → Sol | `max` |
+| `google-search` | 구글 검색 기반 조사 | Sol → Opus | `medium` | OMH 기본값 | - |
+| `x-search` | X 실시간 검색 | Sol | `high` | OMH 기본값 | - |
+| `review` | 다른 모델이 변경을 검토 | Sol → Opus | `xhigh` | OMH 기본값 | - |
+| `swarm` | 여러 병렬 작업자 | Luna | `low` | OMH 기본값 | - |
+| `forensics` | 장애 원인 추적 | Astra → Opus | `xhigh` | OMH 기본값 | - |
+| `synthesize` | 여러 결과를 하나로 종합 | Opus → Sol | `xhigh` | OMH 기본값 | - |
 
 Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각각 설정한다.
 

@@ -1,7 +1,7 @@
 ---
 name: route-simple-work-haiku
 description: simple-work 분류(단순 실행)의 위임 작업. ~/.claude/AGENTS.md의 모델 라우팅이 이 에이전트를 고를 때 사용한다.
-model: claude-haiku-4-5
+model: claude-haiku-5-5
 effort: low
 ---
 

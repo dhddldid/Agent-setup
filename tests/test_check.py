@@ -18,7 +18,7 @@ class CheckerTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("22 route agents match routes/claude-code.json", result.stdout)
+        self.assertIn("25 route agents match routes/claude-code.json", result.stdout)
         self.assertIn("PASS executor: claude", result.stdout)
         self.assertNotIn("PASS executor: codex", result.stdout)
         self.assertNotIn("PASS executor: hermes", result.stdout)

@@ -10,24 +10,32 @@ HERMES_ONLY_SKILLS = {
 
 
 CLAUDE_COMMON = {
-    "ultrabrain": ("gpt-6-astra claude-fable-5-1 claude-opus-5-5", "xhigh"),
-    "deep": ("gpt-6.1-sol claude-fable-5-1 claude-opus-5-5", "high"),
-    "architect": ("claude-fable-5-1 gpt-6-astra claude-opus-5-5", "xhigh"),
-    "unspecified-high": ("claude-opus-5-5", "medium"),
-    "unspecified-low": ("claude-opus-5-5", "low"),
-    "quick": ("gpt-6-luna claude-fable-5-1 claude-opus-5-5 gpt-6-astra", "low"),
-    "simple-work": ("gpt-6-luna claude-fable-5-1 claude-opus-5-5 claude-haiku-4-5", "low"),
     # OMH v4.0.0 deep-work head (Opus 5.5 -> GPT-6.1 Sol, max), applied 2026-10-20.
     "deep-work": ("claude-opus-5-5 gpt-6.1-sol", "max"),
 }
 CLAUDE_PRESETS = {
+    # OMH 4.0.7 recommended order limited to GPT and Claude models (decision 2026-11-10).
     "claude-generous": {
-        "writing": ("claude-opus-5-5 gpt-6.1-sol", "medium"),
-        "visual-engineering": ("claude-fable-5-1 claude-opus-5-5 gpt-6-astra", "high"),
-        "artistry": ("claude-fable-5-1 claude-opus-5-5 gpt-6-astra", "high"),
-        "capable": ("claude-fable-5-1 claude-opus-5-5 claude-sonnet-5-5 gpt-6-astra", "medium"),
+        "ultrabrain": ("gpt-6-astra", "xhigh"),
+        "deep": ("claude-opus-5-5 gpt-6.1-sol", "high"),
+        "architect": ("claude-opus-5-5 gpt-6-astra claude-fable-5-1", "xhigh"),
+        "unspecified-high": ("gpt-6.1-sol claude-opus-5-5", "medium"),
+        "unspecified-low": ("gpt-6.1-sol claude-sonnet-5-5", "low"),
+        "quick": ("gpt-6-luna claude-haiku-5-5", "low"),
+        "writing": ("claude-opus-5-5 claude-sonnet-5-5", "medium"),
+        "visual-engineering": ("claude-opus-5-5 claude-fable-5-1", "high"),
+        "artistry": ("claude-opus-5-5 claude-fable-5-1", "high"),
+        "capable": ("claude-opus-5-5 gpt-6.1-sol claude-fable-5-1", "medium"),
+        "simple-work": ("gpt-6-luna claude-haiku-5-5", "low"),
     },
     "gpt-generous": {
+        "ultrabrain": ("gpt-6-astra claude-fable-5-1 claude-opus-5-5", "xhigh"),
+        "deep": ("gpt-6.1-sol claude-fable-5-1 claude-opus-5-5", "high"),
+        "architect": ("claude-fable-5-1 gpt-6-astra claude-opus-5-5", "xhigh"),
+        "unspecified-high": ("claude-opus-5-5", "medium"),
+        "unspecified-low": ("claude-opus-5-5", "low"),
+        "quick": ("gpt-6-luna claude-fable-5-1 claude-opus-5-5 gpt-6-astra", "low"),
+        "simple-work": ("gpt-6-luna claude-fable-5-1 claude-opus-5-5 claude-haiku-5-5", "low"),
         "writing": ("gpt-6.1-sol claude-opus-5-5", "medium"),
         "visual-engineering": ("claude-fable-5-1 gpt-6-astra claude-opus-5-5", "high"),
         "artistry": ("claude-fable-5-1 gpt-6-astra claude-opus-5-5", "high"),

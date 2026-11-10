@@ -1,5 +1,5 @@
 {
-  "scope": "Approved Hermes-native GPT and Claude category routing; task-specific efforts; main fallback Opus and shared child fallback ending in Opus",
+  "scope": "OMH 4.0.7 recommended category order limited to GPT and Claude models (all 18 categories); main fallback Opus and shared child fallback ending in Opus",
   "categories": [
     {
       "category": "ultrabrain",
@@ -8,14 +8,9 @@
           "model": "gpt-6-astra",
           "reasoning_effort": "xhigh",
           "served": true
-        },
-        {
-          "model": "claude-opus-5-5",
-          "reasoning_effort": "xhigh",
-          "served": true
         }
       ],
-      "chain_text": "gpt-6-astra:xhigh, claude-opus-5-5:xhigh",
+      "chain_text": "gpt-6-astra:xhigh",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -49,9 +44,14 @@
           "model": "gpt-6-astra",
           "reasoning_effort": "xhigh",
           "served": true
+        },
+        {
+          "model": "claude-fable-5-1",
+          "reasoning_effort": "xhigh",
+          "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:xhigh, gpt-6-astra:xhigh",
+      "chain_text": "claude-opus-5-5:xhigh, gpt-6-astra:xhigh, claude-fable-5-1:xhigh",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -100,12 +100,12 @@
           "served": true
         },
         {
-          "model": "claude-opus-5-5",
+          "model": "claude-haiku-5-5",
           "reasoning_effort": "low",
           "served": true
         }
       ],
-      "chain_text": "gpt-6-luna:low, claude-opus-5-5:low",
+      "chain_text": "gpt-6-luna:low, claude-haiku-5-5:low",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -121,14 +121,9 @@
           "model": "claude-sonnet-5-5",
           "reasoning_effort": "medium",
           "served": true
-        },
-        {
-          "model": "gpt-6.1-sol",
-          "reasoning_effort": "medium",
-          "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:medium, claude-sonnet-5-5:medium, gpt-6.1-sol:medium",
+      "chain_text": "claude-opus-5-5:medium, claude-sonnet-5-5:medium",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -139,9 +134,14 @@
           "model": "claude-opus-5-5",
           "reasoning_effort": "high",
           "served": true
+        },
+        {
+          "model": "claude-fable-5-1",
+          "reasoning_effort": "high",
+          "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:high",
+      "chain_text": "claude-opus-5-5:high, claude-fable-5-1:high",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -152,9 +152,14 @@
           "model": "claude-opus-5-5",
           "reasoning_effort": "high",
           "served": true
+        },
+        {
+          "model": "claude-fable-5-1",
+          "reasoning_effort": "high",
+          "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:high",
+      "chain_text": "claude-opus-5-5:high, claude-fable-5-1:high",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -170,9 +175,14 @@
           "model": "gpt-6.1-sol",
           "reasoning_effort": "medium",
           "served": true
+        },
+        {
+          "model": "claude-fable-5-1",
+          "reasoning_effort": "medium",
+          "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:medium, gpt-6.1-sol:medium",
+      "chain_text": "claude-opus-5-5:medium, gpt-6.1-sol:medium, claude-fable-5-1:medium",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -211,6 +221,104 @@
       "chain_text": "claude-opus-5-5:max, gpt-6.1-sol:max",
       "entitlement_shaped": false,
       "origin": "override"
+    },
+    {
+      "category": "google-search",
+      "chain": [
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "medium",
+          "served": true
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "medium",
+          "served": true
+        }
+      ],
+      "chain_text": "gpt-6.1-sol:medium, claude-opus-5-5:medium",
+      "entitlement_shaped": false,
+      "origin": "override"
+    },
+    {
+      "category": "x-search",
+      "chain": [
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high",
+          "served": true
+        }
+      ],
+      "chain_text": "gpt-6.1-sol:high",
+      "entitlement_shaped": false,
+      "origin": "override"
+    },
+    {
+      "category": "review",
+      "chain": [
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh",
+          "served": true
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "xhigh",
+          "served": true
+        }
+      ],
+      "chain_text": "gpt-6.1-sol:xhigh, claude-opus-5-5:xhigh",
+      "entitlement_shaped": false,
+      "origin": "override"
+    },
+    {
+      "category": "swarm",
+      "chain": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "low",
+          "served": true
+        }
+      ],
+      "chain_text": "gpt-6-luna:low",
+      "entitlement_shaped": false,
+      "origin": "override"
+    },
+    {
+      "category": "forensics",
+      "chain": [
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "xhigh",
+          "served": true
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "xhigh",
+          "served": true
+        }
+      ],
+      "chain_text": "gpt-6-astra:xhigh, claude-opus-5-5:xhigh",
+      "entitlement_shaped": false,
+      "origin": "override"
+    },
+    {
+      "category": "synthesize",
+      "chain": [
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "xhigh",
+          "served": true
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh",
+          "served": true
+        }
+      ],
+      "chain_text": "claude-opus-5-5:xhigh, gpt-6.1-sol:xhigh",
+      "entitlement_shaped": false,
+      "origin": "override"
     }
   ],
   "fallback_policy": "Main fallback Opus; shared child Opus -> Astra -> Sonnet (GPT after Anthropic accounts are exhausted); Opus last for pinned GPT children; category assignments and task reasoning preserved",
@@ -236,5 +344,5 @@
     }
   ],
   "preset": "claude-generous",
-  "configured_on": "2026-10-20"
+  "configured_on": "2026-11-10"
 }

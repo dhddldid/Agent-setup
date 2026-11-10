@@ -4,7 +4,27 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED = {'ultrabrain': ('gpt-6-astra claude-opus-5-5', 'xhigh'), 'deep': ('claude-opus-5-5 gpt-6.1-sol', 'high'), 'architect': ('claude-opus-5-5 gpt-6-astra', 'xhigh'), 'unspecified-high': ('gpt-6.1-sol claude-opus-5-5', 'medium'), 'unspecified-low': ('gpt-6.1-sol claude-sonnet-5-5', 'low'), 'quick': ('gpt-6-luna claude-opus-5-5', 'low'), 'writing': ('claude-opus-5-5 claude-sonnet-5-5 gpt-6.1-sol', 'medium'), 'visual-engineering': ('claude-opus-5-5', 'high'), 'artistry': ('claude-opus-5-5', 'high'), 'capable': ('claude-opus-5-5 gpt-6.1-sol', 'medium'), 'simple-work': ('gpt-6-luna claude-haiku-5-5', 'low'), 'deep-work': ('claude-opus-5-5 gpt-6.1-sol', 'max')}
+EXPECTED = {
+    # OMH 4.0.7 recommended order with non-GPT/Claude models removed (decision 2026-11-10).
+    'ultrabrain': ('gpt-6-astra', 'xhigh'),
+    'deep': ('claude-opus-5-5 gpt-6.1-sol', 'high'),
+    'architect': ('claude-opus-5-5 gpt-6-astra claude-fable-5-1', 'xhigh'),
+    'unspecified-high': ('gpt-6.1-sol claude-opus-5-5', 'medium'),
+    'unspecified-low': ('gpt-6.1-sol claude-sonnet-5-5', 'low'),
+    'quick': ('gpt-6-luna claude-haiku-5-5', 'low'),
+    'writing': ('claude-opus-5-5 claude-sonnet-5-5', 'medium'),
+    'visual-engineering': ('claude-opus-5-5 claude-fable-5-1', 'high'),
+    'artistry': ('claude-opus-5-5 claude-fable-5-1', 'high'),
+    'capable': ('claude-opus-5-5 gpt-6.1-sol claude-fable-5-1', 'medium'),
+    'simple-work': ('gpt-6-luna claude-haiku-5-5', 'low'),
+    'deep-work': ('claude-opus-5-5 gpt-6.1-sol', 'max'),
+    'google-search': ('gpt-6.1-sol claude-opus-5-5', 'medium'),
+    'x-search': ('gpt-6.1-sol', 'high'),
+    'review': ('gpt-6.1-sol claude-opus-5-5', 'xhigh'),
+    'swarm': ('gpt-6-luna', 'low'),
+    'forensics': ('gpt-6-astra claude-opus-5-5', 'xhigh'),
+    'synthesize': ('claude-opus-5-5 gpt-6.1-sol', 'xhigh'),
+}
 
 class ClaudeGenerousPolicyTests(unittest.TestCase):
     def test_all_approved_orders_and_efforts(self):

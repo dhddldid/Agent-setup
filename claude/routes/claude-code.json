@@ -1,5 +1,5 @@
 {
-  "source": "hermes/routing-presets/claude-generous.json, hermes/routing-presets/gpt-generous.json (2026-10-08)",
+  "source": "hermes/routing-presets/claude-generous.json (2026-11-10, OMH 4.0.7 order, GPT/Claude only), hermes/routing-presets/gpt-generous.json",
   "default_preset": "claude-generous",
   "descriptions": {
     "ultrabrain": "가장 깊은 추론이 필요한 모호한 문제",
@@ -21,33 +21,21 @@
         {
           "model": "gpt-6-astra",
           "effort": "xhigh"
-        },
-        {
-          "model": "claude-fable-5-1",
-          "effort": "xhigh"
-        },
-        {
-          "model": "claude-opus-5-5",
-          "effort": "xhigh"
         }
       ],
       "deep": [
         {
-          "model": "gpt-6.1-sol",
-          "effort": "high"
-        },
-        {
-          "model": "claude-fable-5-1",
-          "effort": "high"
-        },
-        {
           "model": "claude-opus-5-5",
+          "effort": "high"
+        },
+        {
+          "model": "gpt-6.1-sol",
           "effort": "high"
         }
       ],
       "architect": [
         {
-          "model": "claude-fable-5-1",
+          "model": "claude-opus-5-5",
           "effort": "xhigh"
         },
         {
@@ -55,11 +43,15 @@
           "effort": "xhigh"
         },
         {
-          "model": "claude-opus-5-5",
+          "model": "claude-fable-5-1",
           "effort": "xhigh"
         }
       ],
       "unspecified-high": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
         {
           "model": "claude-opus-5-5",
           "effort": "medium"
@@ -67,7 +59,11 @@
       ],
       "unspecified-low": [
         {
-          "model": "claude-opus-5-5",
+          "model": "gpt-6.1-sol",
+          "effort": "low"
+        },
+        {
+          "model": "claude-sonnet-5-5",
           "effort": "low"
         }
       ],
@@ -77,15 +73,7 @@
           "effort": "low"
         },
         {
-          "model": "claude-fable-5-1",
-          "effort": "low"
-        },
-        {
-          "model": "claude-opus-5-5",
-          "effort": "low"
-        },
-        {
-          "model": "gpt-6-astra",
+          "model": "claude-haiku-5-5",
           "effort": "low"
         }
       ],
@@ -95,53 +83,41 @@
           "effort": "medium"
         },
         {
-          "model": "gpt-6.1-sol",
+          "model": "claude-sonnet-5-5",
           "effort": "medium"
         }
       ],
       "visual-engineering": [
         {
-          "model": "claude-fable-5-1",
-          "effort": "high"
-        },
-        {
           "model": "claude-opus-5-5",
           "effort": "high"
         },
         {
-          "model": "gpt-6-astra",
+          "model": "claude-fable-5-1",
           "effort": "high"
         }
       ],
       "artistry": [
         {
-          "model": "claude-fable-5-1",
-          "effort": "high"
-        },
-        {
           "model": "claude-opus-5-5",
           "effort": "high"
         },
         {
-          "model": "gpt-6-astra",
+          "model": "claude-fable-5-1",
           "effort": "high"
         }
       ],
       "capable": [
         {
-          "model": "claude-fable-5-1",
-          "effort": "medium"
-        },
-        {
           "model": "claude-opus-5-5",
           "effort": "medium"
         },
         {
-          "model": "claude-sonnet-5-5",
+          "model": "gpt-6.1-sol",
           "effort": "medium"
         },
         {
-          "model": "gpt-6-astra",
+          "model": "claude-fable-5-1",
           "effort": "medium"
         }
       ],
@@ -151,15 +127,7 @@
           "effort": "low"
         },
         {
-          "model": "claude-fable-5-1",
-          "effort": "low"
-        },
-        {
-          "model": "claude-opus-5-5",
-          "effort": "low"
-        },
-        {
-          "model": "claude-haiku-4-5",
+          "model": "claude-haiku-5-5",
           "effort": "low"
         }
       ],
@@ -317,7 +285,7 @@
           "effort": "low"
         },
         {
-          "model": "claude-haiku-4-5",
+          "model": "claude-haiku-5-5",
           "effort": "low"
         }
       ],

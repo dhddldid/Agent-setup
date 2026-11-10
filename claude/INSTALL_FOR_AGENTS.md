@@ -8,7 +8,7 @@
 |---|---|
 | Claude Code | 설치·로그인 상태 |
 | Codex 플러그인 | `openai/codex-plugin-cc`의 `codex@openai-codex`와 Codex CLI 로그인. GPT 라우팅 항목을 실행한다. 사용자가 GPT를 쓰지 않으면 생략하고, 그 항목은 다음 Claude 항목으로 넘어간다 |
-| 모델 라우팅 | Claude 넉넉형 (사용자가 원하면 GPT 넉넉형). 분류별 하위 에이전트 23개와 `agent-setup/routing.json` |
+| 모델 라우팅 | Claude 넉넉형 (사용자가 원하면 GPT 넉넉형). 분류별 하위 에이전트 25개와 `agent-setup/routing.json` |
 | 스킬 | [스킬 표](../docs/skills.md)의 Claude 열 (공통 49개 + OMH 153개 + codex + 외부 39개) |
 | 전역 지침 | `~/.claude/AGENTS.md` 관리 구간, Claude Code가 읽도록 `~/.claude/CLAUDE.md`에 `@AGENTS.md` 한 줄 |
 | MCP | CodeGraph, GAM (사용자 범위) |
@@ -27,7 +27,7 @@
 사용자가 작업할 Claude Code 화면에서 [공통 완료 기준](../docs/verification.md)에 따라 각 항목을 통과·실패·미확인으로 기록한다. Claude 앱 Code 탭과 터미널 CLI는 각각의 실제 상태를 확인한다.
 
 1. 새 Claude Code 세션에서 전역 지침이 실제 응답에 적용된다.
-2. 분류별 하위 에이전트 23개와 설치한 Codex 플러그인 에이전트가 발견된다.
+2. 분류별 하위 에이전트 25개와 설치한 Codex 플러그인 에이전트가 발견된다.
 3. Claude 후보 하나와 GPT를 사용한다면 GPT 후보 하나가 실제 하위 작업에 응답하고 실행 모델이 확인된다.
 4. 관련 요청에서 설치한 스킬이 발견되고 사용된다.
 5. CodeGraph·GAM MCP 도구가 실제 결과를 돌려준다. 실제 코드 저장소 하나에서 색인 생성 후 존재하는 심볼이 조회되고, GAM에 시험 기억을 저장·활성화한 뒤 같은 프로젝트 범위 검색으로 회수된다(시험 기억은 확인 후 보관 처리).

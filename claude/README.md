@@ -4,7 +4,7 @@ Claude Code의 전역 지침·라우팅·스킬 설치 원본을 이 폴더에�
 
 | 항목 | 설치 위치 | 원본 |
 |---|---|---|
-| 라우팅 에이전트 23개 | `~/.claude/agents/route-<분류>-<계열>.md` | [routes/claude-code.json](routes/claude-code.json) → `scripts/build_agents.py` |
+| 라우팅 에이전트 25개 | `~/.claude/agents/route-<분류>-<계열>.md` | [routes/claude-code.json](routes/claude-code.json) → `scripts/build_agents.py` |
 | 라우팅 표 | `~/.claude/agent-setup/routing.json` | 선택한 프리셋 |
 | 전역 규칙: 작업 원칙, 스킬 흐름, 작업 형태별 OMH 흐름(`OMH workflow skills`), Aside, 모델 라우팅 | `~/.claude/AGENTS.md` 관리 구간 + `~/.claude/CLAUDE.md`의 `@AGENTS.md` 한 줄 | [templates/global-rules.md](templates/global-rules.md) (`../shared/rules/`에서 생성) |
 | 스킬 242개 | `~/.claude/skills/` | 공통 `../shared/skills/core/` 49개 + OMH 최신 정식판 사본 `../shared/skills/omh/` 153개(버전은 `SOURCE.json`) + Claude 전용 `skills/codex` + Codex와 같은 외부 스킬 39개(`../codex/inventories/external-skills.json`) |
@@ -16,18 +16,18 @@ Hermes에서 가져온 두 프리셋을 `routes/claude-code.json`에서 Claude C
 
 | 분류 | 용도 | Claude 넉넉형 | GPT 넉넉형 | 추론 |
 |---|---|---|---|---|
-| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | gpt-6-astra → claude-fable-5-1 → claude-opus-5-5 | 같음 | xhigh |
-| `deep` | 깊은 구현·디버깅 | gpt-6.1-sol → claude-fable-5-1 → claude-opus-5-5 | 같음 | high |
-| `architect` | 아키텍처·시스템 경계 설계 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | 같음 | xhigh |
-| `unspecified-high` | 분류 밖의 복합 작업 | claude-opus-5-5 | 같음 | medium |
-| `unspecified-low` | 분류 밖의 단순 작업 | claude-opus-5-5 | 같음 | low |
-| `quick` | 좁은 탐색·빠른 확인 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → gpt-6-astra | 같음 | low |
-| `writing` | 문서 작성·편집 | claude-opus-5-5 → gpt-6.1-sol | gpt-6.1-sol → claude-opus-5-5 | medium |
-| `visual-engineering` | 화면·프론트엔드 구현 | claude-fable-5-1 → claude-opus-5-5 → gpt-6-astra | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
-| `artistry` | 창의적 설계·시각 방향 | claude-fable-5-1 → claude-opus-5-5 → gpt-6-astra | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
-| `capable` | 일반 실행 | claude-fable-5-1 → claude-opus-5-5 → claude-sonnet-5-5 → gpt-6-astra | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 → claude-sonnet-5-5 | medium |
-| `simple-work` | 단순 실행 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → claude-haiku-4-5 | 같음 | low |
-| `deep-work` | 길고 까다로운 복합 실행 | claude-opus-5-5 → gpt-6.1-sol | claude-opus-5-5 → gpt-6.1-sol | max |
+| `ultrabrain` | 가장 깊은 추론이 필요한 모호한 문제 | gpt-6-astra | gpt-6-astra → claude-fable-5-1 → claude-opus-5-5 | xhigh |
+| `deep` | 깊은 구현·디버깅 | claude-opus-5-5 → gpt-6.1-sol | gpt-6.1-sol → claude-fable-5-1 → claude-opus-5-5 | high |
+| `architect` | 아키텍처·시스템 경계 설계 | claude-opus-5-5 → gpt-6-astra → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | xhigh |
+| `unspecified-high` | 분류 밖의 복합 작업 | gpt-6.1-sol → claude-opus-5-5 | claude-opus-5-5 | medium |
+| `unspecified-low` | 분류 밖의 단순 작업 | gpt-6.1-sol → claude-sonnet-5-5 | claude-opus-5-5 | low |
+| `quick` | 좁은 탐색·빠른 확인 | gpt-6-luna → claude-haiku-5-5 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → gpt-6-astra | low |
+| `writing` | 문서 작성·편집 | claude-opus-5-5 → claude-sonnet-5-5 | gpt-6.1-sol → claude-opus-5-5 | medium |
+| `visual-engineering` | 화면·프론트엔드 구현 | claude-opus-5-5 → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
+| `artistry` | 창의적 설계·시각 방향 | claude-opus-5-5 → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
+| `capable` | 일반 실행 | claude-opus-5-5 → gpt-6.1-sol → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 → claude-sonnet-5-5 | medium |
+| `simple-work` | 단순 실행 | gpt-6-luna → claude-haiku-5-5 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → claude-haiku-5-5 | low |
+| `deep-work` | 길고 까다로운 복합 실행 | claude-opus-5-5 → gpt-6.1-sol | 같음 | max |
 
 Claude Code에는 하위 에이전트 단위 모델 자동 대체가 없다. 전역 규칙에 따라 주 에이전트가 항목 실패(모델 사용 불가·한도·인증 오류, 빈 Codex 결과)를 보고 같은 작업을 다음 항목에 넘긴다. Fable은 요금제에 따라 별도 사용 크레딧을 쓴다.
 

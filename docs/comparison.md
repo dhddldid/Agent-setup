@@ -21,7 +21,7 @@
 ## 모델
 
 - Codex: Astra·Sol·Luna 계열 (gpt-6-astra, gpt-6.1-sol, gpt-6-luna)
-- Claude Code: `claude/routes/claude-code.json`의 GPT·Claude 혼합 순서. Claude 항목은 claude-fable-5-1·claude-opus-5-5·claude-sonnet-5-5·claude-haiku-4-5, GPT 항목은 gpt-6-astra·gpt-6.1-sol·gpt-6-luna. Hermes 프리셋에서 가져온 정책을 Claude Code 원본에서 독립적으로 관리한다.
+- Claude Code: `claude/routes/claude-code.json`의 GPT·Claude 혼합 순서. Claude 항목은 claude-fable-5-1·claude-opus-5-5·claude-sonnet-5-5·claude-haiku-5-5, GPT 항목은 gpt-6-astra·gpt-6.1-sol·gpt-6-luna. Hermes 프리셋에서 가져온 정책을 Claude Code 원본에서 독립적으로 관리한다.
 - Hermes: GPT·Claude 혼합 후보, Claude 넉넉형·GPT 넉넉형 프리셋
 
 ## Hermes에서 옮긴 기능

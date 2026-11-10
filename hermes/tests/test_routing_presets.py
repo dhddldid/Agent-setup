@@ -6,8 +6,9 @@ import shlex
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-CHANGED = {'deep', 'architect', 'unspecified-high', 'unspecified-low', 'quick',
+CHANGED = {'ultrabrain', 'deep', 'architect', 'unspecified-high', 'unspecified-low', 'quick',
            'writing', 'visual-engineering', 'artistry', 'capable', 'simple-work'}
+OMH_ONLY = {'google-search', 'x-search', 'review', 'swarm', 'forensics', 'synthesize'}
 
 
 class RoutingPresetTests(unittest.TestCase):
@@ -19,9 +20,10 @@ class RoutingPresetTests(unittest.TestCase):
 
     def test_presets_have_independent_category_policies(self):
         a, b = self.chains['claude-generous'], self.chains['gpt-generous']
-        self.assertEqual(len(a), 12)
-        self.assertEqual(set(a), set(b))
-        self.assertEqual({key for key in a if a[key] != b[key]}, CHANGED)
+        self.assertEqual(len(a), 18)
+        self.assertEqual(len(b), 12)
+        self.assertEqual(set(a) - set(b), OMH_ONLY)
+        self.assertEqual({key for key in b if a[key] != b[key]}, CHANGED)
 
     def test_gpt_keeps_astra_first_and_deep_work_follows_omh(self):
         chains = self.chains['gpt-generous']
@@ -32,9 +34,10 @@ class RoutingPresetTests(unittest.TestCase):
             self.assertEqual([(x['model'], x['reasoning_effort']) for x in self.chains[name]['deep-work']],
                              [('claude-opus-5-5', 'max'), ('gpt-6.1-sol', 'max')])
 
-    def test_fable_is_absent_from_both_presets(self):
+    def test_fable_only_in_claude_preset_and_chain_text_matches(self):
+        self.assertNotIn('claude-fable-5-1', json.dumps(self.presets['gpt-generous']))
+        self.assertIn('claude-fable-5-1', json.dumps(self.presets['claude-generous']))
         for name, preset in self.presets.items():
-            self.assertNotIn('claude-fable-5-1', json.dumps(preset), name)
             for item in preset['categories']:
                 self.assertEqual(item['chain_text'], ', '.join(
                     x['model'] + ':' + x['reasoning_effort'] for x in item['chain']))
@@ -53,7 +56,7 @@ class RoutingPresetTests(unittest.TestCase):
             for chain in chains.values():
                 self.assertTrue(all(item['model'].startswith(('gpt-', 'claude-'))
                                     for item in chain))
-            expected = ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6.1-sol']
+            expected = ['claude-opus-5-5', 'claude-sonnet-5-5']
             if name == 'gpt-generous':
                 expected = ['gpt-6.1-sol', 'claude-opus-5-5']
             self.assertEqual([item['model'] for item in chains['writing']], expected)
@@ -70,7 +73,7 @@ class RoutingPresetTests(unittest.TestCase):
         for name, chains in self.chains.items():
             section = doc.split('### ' + name + ' CLI', 1)[1].split('\n### ', 1)[0]
             lines = re.findall(r'^omh model-chains set .+$', section, re.M)
-            self.assertEqual(len(lines), 12)
+            self.assertEqual(len(lines), len(chains))
             for line in lines:
                 command = shlex.split(line)
                 key = command[3]
