@@ -37,6 +37,21 @@ def folder_snapshot(folder, *, source=False):
     return result
 
 
+def content_snapshot(folder, *, source=False):
+    """Snapshot that ignores the SKILL.md frontmatter description line.
+
+    apply_skill_descriptions.py rewrites only that line, so a copy whose sole
+    difference from its recorded upstream is the description is still unmodified.
+    """
+    result = folder_snapshot(folder, source=source)
+    skill = Path(folder)/'SKILL.md'
+    if 'SKILL.md' in result and skill.is_file():
+        lines = skill.read_bytes().splitlines(keepends=True)
+        kept = [line for line in lines if not line.lstrip().startswith(b'description:')]
+        result['SKILL.md'] = (hashlib.sha256(b''.join(kept)).hexdigest(), result['SKILL.md'][1])
+    return result
+
+
 def install(names, *, catalog, home, state, refresh=False, replace_existing=False, skills_dir=None):
     if replace_existing and not refresh:
         raise RuntimeError('--replace-existing requires --refresh')
@@ -110,7 +125,9 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
                 if not recorded and not replace_existing:
                     results[name] = 'untracked_copy_preserved'
                     continue
-                if recorded and not replace_existing:
+                if recorded:
+                    # Replace only a copy that still matches its recorded upstream apart from
+                    # the curated description line; local additions are kept and reported.
                     old_key = (recorded['source'],recorded['commit'])
                     if old_key not in checkouts:
                         old_checkout = Path(temp)/str(len(checkouts))
@@ -123,7 +140,8 @@ def install(names, *, catalog, home, state, refresh=False, replace_existing=Fals
                         results[name] = 'modified_copy_preserved'
                         continue
                     old_source = source_folder(checkouts[old_key],recorded['path'])
-                    if current != folder_snapshot(old_source,source=True):
+                    if content_snapshot(target) != content_snapshot(old_source,source=True):
+                        print('Local edits kept',name,str(target))
                         results[name] = 'modified_copy_preserved'
                         continue
                 backup = state/'external-skill-backups'/datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%f')/name

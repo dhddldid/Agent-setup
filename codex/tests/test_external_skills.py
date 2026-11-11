@@ -90,6 +90,43 @@ class WorkPackInstallTests(unittest.TestCase):
             self.assertEqual((home/'.agents/skills/beta/SKILL.md').read_text(), 'new upstream beta')
             self.assertTrue((Path(refreshed['beta'].split('=',1)[1])/'SKILL.md').is_file())
 
+    def test_replace_existing_keeps_local_additions_and_updates_description_only_copies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root/'source'
+            source.mkdir()
+            subprocess.run(['git','init','-q',str(source)], check=True)
+            entries = {}
+            for name in ('alpha','beta'):
+                folder = source/'skills'/name
+                folder.mkdir(parents=True)
+                (folder/'SKILL.md').write_text(f'---\nname: {name}\ndescription: fixture\n---\nbody\n')
+                entries[name] = {'sourceUrl': str(source), 'skillPath': f'skills/{name}/SKILL.md'}
+            def commit(message):
+                subprocess.run(['git','-C',str(source),'add','.'], check=True)
+                subprocess.run(['git','-C',str(source),'-c','user.name=Fixture',
+                                '-c','user.email=fixture@example.invalid','commit','-qm',message], check=True)
+            commit('fixture')
+            catalog = root/'catalog.json'
+            catalog.write_text(json.dumps({'skills': entries}))
+            home, state = root/'home', root/'state'
+            install(list(entries), catalog=catalog, home=home, state=state)
+            skills = home/'.agents/skills'
+            # beta: curated description only; alpha: a local lesson and a local reference file.
+            (skills/'beta/SKILL.md').write_text('---\nname: beta\ndescription: "curated"\n---\nbody\n')
+            (skills/'alpha/SKILL.md').write_text('---\nname: alpha\ndescription: fixture\n---\nbody\nlocal lesson\n')
+            (skills/'alpha/references').mkdir()
+            (skills/'alpha/references/local.md').write_text('local')
+            for name in entries:
+                (source/'skills'/name/'SKILL.md').write_text(f'---\nname: {name}\ndescription: fixture\n---\nnew body\n')
+            commit('update')
+            result = install(list(entries), catalog=catalog, home=home, state=state, refresh=True, replace_existing=True)
+            self.assertEqual(result['alpha'], 'modified_copy_preserved')
+            self.assertIn('local lesson', (skills/'alpha/SKILL.md').read_text())
+            self.assertTrue((skills/'alpha/references/local.md').is_file())
+            self.assertTrue(result['beta'].startswith('updated; backup='))
+            self.assertIn('new body', (skills/'beta/SKILL.md').read_text())
+
     def test_other_skill_folder_gets_its_own_copy_and_lock(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
