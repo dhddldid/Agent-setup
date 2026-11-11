@@ -6,8 +6,9 @@ import shlex
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+# writing matches in both presets since 2026-11-12 (Sol -> Opus).
 CHANGED = {'ultrabrain', 'deep', 'architect', 'unspecified-high', 'unspecified-low', 'quick',
-           'writing', 'visual-engineering', 'artistry', 'capable', 'simple-work'}
+           'visual-engineering', 'artistry', 'capable', 'simple-work'}
 OMH_ONLY = {'google-search', 'x-search', 'review', 'swarm', 'forensics', 'synthesize'}
 
 
@@ -56,9 +57,7 @@ class RoutingPresetTests(unittest.TestCase):
             for chain in chains.values():
                 self.assertTrue(all(item['model'].startswith(('gpt-', 'claude-'))
                                     for item in chain))
-            expected = ['claude-opus-5-5', 'claude-sonnet-5-5']
-            if name == 'gpt-generous':
-                expected = ['gpt-6.1-sol', 'claude-opus-5-5']
+            expected = ['gpt-6.1-sol', 'claude-opus-5-5']
             self.assertEqual([item['model'] for item in chains['writing']], expected)
             self.assertTrue(all(item['reasoning_effort'] == 'medium'
                                 for item in chains['writing']))

@@ -17,9 +17,9 @@ Hermes 내부 위임에 적용하는 사용자 지정 정책이다. 외부 Claud
 | unspecified-high | Sol → Opus | medium | Opus | medium |
 | unspecified-low | Sol → Sonnet | low | Opus | low |
 | quick | Luna → Haiku 5.5 | low | Luna → Opus → Astra | low |
-| writing | Opus → Sonnet | medium | Sol → Opus | medium |
+| writing | Sol → Opus | medium | Sol → Opus | medium |
 | visual-engineering | Opus → Fable | high | Astra → Opus | high |
-| artistry | Opus → Fable | high | Astra → Opus | high |
+| artistry | Sol → Opus → Fable | high | Astra → Opus | high |
 | capable | Opus → Sol → Fable | medium | Astra → Opus → Sonnet | medium |
 | simple-work | Luna → Haiku 5.5 | low | Luna → Opus → Haiku 4.5 | low |
 | deep-work | Opus → Sol | max | Opus → Sol | max |
@@ -28,9 +28,9 @@ Hermes 내부 위임에 적용하는 사용자 지정 정책이다. 외부 Claud
 | review | Sol → Opus | xhigh | OMH 기본값 | - |
 | swarm | Luna | low | OMH 기본값 | - |
 | forensics | Astra → Opus | xhigh | OMH 기본값 | - |
-| synthesize | Opus → Sol | xhigh | OMH 기본값 | - |
+| synthesize | Sol → Opus | xhigh | OMH 기본값 | - |
 
-Claude 넉넉형은 OMH 4.0.7 추천 순서와 추론을 그대로 따르고, GPT·Claude가 아닌 후보(Gemini·Grok·Kimi·GLM·DeepSeek)만 뺀다(사용자 결정 2026-11-10). OMH 추천에서 후보가 모두 빠지는 x-search는 Sol(`high`)로 둔다. 18개 분류를 모두 덮어써서 OMH 기본값의 비GPT·비Claude 후보가 남지 않게 한다. Fable은 Claude 계열이라 OMH 순서대로 남고, 같은 Anthropic 주간 한도에서 차감된다. Sol은 GPT-6.1 Sol, Luna·Astra는 GPT-6, Opus·Sonnet·Haiku 5.5는 Claude 5.5, Fable은 Claude Fable 5.1이다. GPT 넉넉형은 12개 분류만 지정하며 이전 정책을 유지한다. 각 실행기의 정책은 해당 폴더에서 독립적으로 관리한다.
+Claude 넉넉형은 OMH 4.0.7 추천 순서와 추론을 그대로 따르고, GPT·Claude가 아닌 후보(Gemini·Grok·Kimi·GLM·DeepSeek)만 뺀다(사용자 결정 2026-11-10). OMH 추천에서 후보가 모두 빠지는 x-search는 Sol(`high`)로 둔다. Opus를 코딩에 남기려고 코딩 외 분류인 writing·artistry·synthesize는 Sol을 1순위로 두고, 분류 없이 띄우는 하위 에이전트 기본값(`delegation.model`)도 Sol(`openai-codex`, medium)로 둔다. 메인 대화는 Opus를 유지한다(사용자 결정 2026-11-12). 18개 분류를 모두 덮어써서 OMH 기본값의 비GPT·비Claude 후보가 남지 않게 한다. Fable은 Claude 계열이라 OMH 순서대로 남고, 같은 Anthropic 주간 한도에서 차감된다. Sol은 GPT-6.1 Sol, Luna·Astra는 GPT-6, Opus·Sonnet·Haiku 5.5는 Claude 5.5, Fable은 Claude Fable 5.1이다. GPT 넉넉형은 12개 분류만 지정하며 이전 정책을 유지한다. 각 실행기의 정책은 해당 폴더에서 독립적으로 관리한다.
 
 ## 적용 기준
 
@@ -103,9 +103,9 @@ omh model-chains set architect 'claude-opus-5-5:xhigh, gpt-6-astra:xhigh, claude
 omh model-chains set unspecified-high 'gpt-6.1-sol:medium, claude-opus-5-5:medium'
 omh model-chains set unspecified-low 'gpt-6.1-sol:low, claude-sonnet-5-5:low'
 omh model-chains set quick 'gpt-6-luna:low, claude-haiku-5-5:low'
-omh model-chains set writing 'claude-opus-5-5:medium, claude-sonnet-5-5:medium'
+omh model-chains set writing 'gpt-6.1-sol:medium, claude-opus-5-5:medium'
 omh model-chains set visual-engineering 'claude-opus-5-5:high, claude-fable-5-1:high'
-omh model-chains set artistry 'claude-opus-5-5:high, claude-fable-5-1:high'
+omh model-chains set artistry 'gpt-6.1-sol:high, claude-opus-5-5:high, claude-fable-5-1:high'
 omh model-chains set capable 'claude-opus-5-5:medium, gpt-6.1-sol:medium, claude-fable-5-1:medium'
 omh model-chains set simple-work 'gpt-6-luna:low, claude-haiku-5-5:low'
 omh model-chains set deep-work 'claude-opus-5-5:max, gpt-6.1-sol:max'
@@ -114,7 +114,7 @@ omh model-chains set x-search 'gpt-6.1-sol:high'
 omh model-chains set review 'gpt-6.1-sol:xhigh, claude-opus-5-5:xhigh'
 omh model-chains set swarm 'gpt-6-luna:low'
 omh model-chains set forensics 'gpt-6-astra:xhigh, claude-opus-5-5:xhigh'
-omh model-chains set synthesize 'claude-opus-5-5:xhigh, gpt-6.1-sol:xhigh'
+omh model-chains set synthesize 'gpt-6.1-sol:xhigh, claude-opus-5-5:xhigh'
 omh model-chains show --json
 ```
 

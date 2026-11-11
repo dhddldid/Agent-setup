@@ -113,17 +113,17 @@
       "category": "writing",
       "chain": [
         {
-          "model": "claude-opus-5-5",
+          "model": "gpt-6.1-sol",
           "reasoning_effort": "medium",
           "served": true
         },
         {
-          "model": "claude-sonnet-5-5",
+          "model": "claude-opus-5-5",
           "reasoning_effort": "medium",
           "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:medium, claude-sonnet-5-5:medium",
+      "chain_text": "gpt-6.1-sol:medium, claude-opus-5-5:medium",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -149,6 +149,11 @@
       "category": "artistry",
       "chain": [
         {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "high",
+          "served": true
+        },
+        {
           "model": "claude-opus-5-5",
           "reasoning_effort": "high",
           "served": true
@@ -159,7 +164,7 @@
           "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:high, claude-fable-5-1:high",
+      "chain_text": "gpt-6.1-sol:high, claude-opus-5-5:high, claude-fable-5-1:high",
       "entitlement_shaped": false,
       "origin": "override"
     },
@@ -306,17 +311,17 @@
       "category": "synthesize",
       "chain": [
         {
-          "model": "claude-opus-5-5",
+          "model": "gpt-6.1-sol",
           "reasoning_effort": "xhigh",
           "served": true
         },
         {
-          "model": "gpt-6.1-sol",
+          "model": "claude-opus-5-5",
           "reasoning_effort": "xhigh",
           "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:xhigh, gpt-6.1-sol:xhigh",
+      "chain_text": "gpt-6.1-sol:xhigh, claude-opus-5-5:xhigh",
       "entitlement_shaped": false,
       "origin": "override"
     }
