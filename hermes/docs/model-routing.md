@@ -9,28 +9,32 @@ Hermes 내부 위임에 적용하는 사용자 지정 정책이다. 외부 Claud
 
 설치 기본은 Claude 넉넉형이며 GPT(코덱스) 넉넉형은 선택사항이다. [routing-snapshot.json](../routing-snapshot.json)은 Claude형 호환 사본이며 적용 요청에는 프리셋을 명시한다. 설치·전환 요청 없이 기존 환경의 라우팅을 자동 변경하지 않는다.
 
-| 분류 | Claude 넉넉형 | 추론 | GPT 넉넉형 | 추론 |
-|---|---|---|---|---|
-| ultrabrain | Astra | xhigh | Astra → Opus | xhigh |
-| deep | Opus → Sol | high | Sol → Opus | high |
-| architect | Opus → Astra → Fable | xhigh | Astra → Opus | xhigh |
-| unspecified-high | Sol → Opus | medium | Opus | medium |
-| unspecified-low | Sol → Sonnet | low | Opus | low |
-| quick | Luna → Haiku 5.5 | low | Luna → Opus → Astra | low |
-| writing | Sol → Opus | medium | Sol → Opus | medium |
-| visual-engineering | Opus → Fable | high | Astra → Opus | high |
-| artistry | Sol → Opus → Fable | high | Astra → Opus | high |
-| capable | Opus → Sol → Fable | medium | Astra → Opus → Sonnet | medium |
-| simple-work | Luna → Haiku 5.5 | low | Luna → Opus → Haiku 4.5 | low |
-| deep-work | Opus → Sol | max | Opus → Sol | max |
-| google-search | Sol → Opus | medium | OMH 기본값 | - |
-| x-search | Sol | high | OMH 기본값 | - |
-| review | Sol → Opus | xhigh | OMH 기본값 | - |
-| swarm | Luna | low | OMH 기본값 | - |
-| forensics | Astra → Opus | xhigh | OMH 기본값 | - |
-| synthesize | Sol → Opus | xhigh | OMH 기본값 | - |
+| 분류 | 뜻 | 성격 | OMH 4.0.7 추천 | Claude 넉넉형(기본) | 추론 | GPT 넉넉형 | 추론 |
+|---|---|---|---|---|---|---|---|
+| ultrabrain | 최고난도 추론 | 추론 | Astra | Astra | xhigh | Astra → Opus | xhigh |
+| deep | 깊은 작업 | 코딩 | Opus → Sol → Kimi | Opus → Sol | high | Sol → Opus | high |
+| deep-work | 아주 긴 작업 | 코딩 | Opus → Sol | Opus → Sol | max | Opus → Sol | max |
+| architect | 설계 | 코딩 | Opus → Astra → Fable → Kimi | Opus → Astra → Fable | xhigh | Astra → Opus | xhigh |
+| visual-engineering | 화면 개발 | 코딩 | Opus → Fable → Gemini → Kimi | Opus → Fable | high | Astra → Opus | high |
+| capable | 일반 실무 | 코딩 | Opus → Sol → Fable → Kimi | Opus → Sol → Fable | medium | Astra → Opus → Sonnet | medium |
+| writing | 글쓰기 | 코딩 외 | Opus → Sonnet → Kimi → Gemini | **Sol** → Opus | medium | Sol → Opus | medium |
+| synthesize | 종합·정리 | 코딩 외 | Opus → Sol → Gemini | **Sol** → Opus | xhigh | OMH 기본값 | - |
+| artistry | 창작·디자인 | 코딩 외 | Gemini → Opus → Fable → Kimi | **Sol** → Opus → Fable | high | Astra → Opus | high |
+| review | 검토 | 코딩 외 | Sol → Opus → Kimi | Sol → Opus | xhigh | OMH 기본값 | - |
+| forensics | 원인 추적 | 코딩 외 | Astra → Opus → Kimi | Astra → Opus | xhigh | OMH 기본값 | - |
+| google-search | 웹 검색 | 코딩 외 | Gemini → Sol → Opus | Sol → Opus | medium | OMH 기본값 | - |
+| x-search | X 검색 | 코딩 외 | Grok → Kimi → Gemini | Sol | high | OMH 기본값 | - |
+| unspecified-high | 분류 안 된 어려운 일 | 기타 | Sol → Opus → Kimi | Sol → Opus | medium | Opus | medium |
+| unspecified-low | 분류 안 된 쉬운 일 | 기타 | GLM → DeepSeek → Sol → Sonnet | Sol → Sonnet | low | Opus | low |
+| quick | 빠른 일 | 가벼움 | GLM → Luna → Haiku 5.5 → Kimi | Luna → Haiku 5.5 | low | Luna → Opus → Astra | low |
+| simple-work | 단순 작업 | 가벼움 | Luna → Haiku 5.5 → DeepSeek | Luna → Haiku 5.5 | low | Luna → Opus → Haiku 4.5 | low |
+| swarm | 대량 병렬 | 가벼움 | DeepSeek → GLM → Luna | Luna | low | OMH 기본값 | - |
+| (분류 없음) 하위 에이전트 | `delegation.model` 기본값 | - | 메인 대화 모델을 따름 | **Sol** → Opus | medium | - | - |
+| 메인 대화·Discord·cron | `model.default` | - | - | Opus → Sol | medium | - | - |
 
-Claude 넉넉형은 OMH 4.0.7 추천 순서와 추론을 그대로 따르고, GPT·Claude가 아닌 후보(Gemini·Grok·Kimi·GLM·DeepSeek)만 뺀다(사용자 결정 2026-11-10). OMH 추천에서 후보가 모두 빠지는 x-search는 Sol(`high`)로 둔다. Opus를 코딩에 남기려고 코딩 외 분류인 writing·artistry·synthesize는 Sol을 1순위로 두고, 분류 없이 띄우는 하위 에이전트 기본값(`delegation.model`)도 Sol(`openai-codex`, medium)로 둔다. 메인 대화는 Opus를 유지한다(사용자 결정 2026-11-12). 18개 분류를 모두 덮어써서 OMH 기본값의 비GPT·비Claude 후보가 남지 않게 한다. Fable은 Claude 계열이라 OMH 순서대로 남고, 같은 Anthropic 주간 한도에서 차감된다. Sol은 GPT-6.1 Sol, Luna·Astra는 GPT-6, Opus·Sonnet·Haiku 5.5는 Claude 5.5, Fable은 Claude Fable 5.1이다. GPT 넉넉형은 12개 분류만 지정하며 이전 정책을 유지한다. 각 실행기의 정책은 해당 폴더에서 독립적으로 관리한다.
+추론 강도는 18개 분류 모두 OMH 4.0.7 추천과 같다. 굵게 표시한 칸이 OMH 추천 1순위와 다르게 둔 곳이다.
+
+Claude 넉넉형은 OMH 4.0.7 추천 순서와 추론을 따르고, GPT·Claude가 아닌 후보(Gemini·Grok·Kimi·GLM·DeepSeek)만 뺀다(사용자 결정 2026-11-10). OMH 추천에서 후보가 모두 빠지는 x-search는 Sol(`high`)로 둔다. Opus를 코딩에 남기려고 코딩 외 분류인 writing·artistry·synthesize는 Sol을 1순위로 두고, 분류 없이 띄우는 하위 에이전트 기본값(`delegation.model`)도 Sol(`openai-codex`, medium)로 둔다. 메인 대화는 Opus를 유지한다(사용자 결정 2026-11-12). 18개 분류를 모두 덮어써서 OMH 기본값의 비GPT·비Claude 후보가 남지 않게 한다. Fable은 Claude 계열이라 OMH 순서대로 남고, 같은 Anthropic 주간 한도에서 차감된다. Sol은 GPT-6.1 Sol, Luna·Astra는 GPT-6, Opus·Sonnet·Haiku 5.5는 Claude 5.5, Fable은 Claude Fable 5.1이다. GPT 넉넉형은 12개 분류만 지정하며 이전 정책을 유지한다. 각 실행기의 정책은 해당 폴더에서 독립적으로 관리한다.
 
 ## 적용 기준
 
