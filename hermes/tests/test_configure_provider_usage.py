@@ -22,6 +22,20 @@ const rows = data && Array.isArray(data.providers) ? data.providers : []
 const panels = () => { const provs = data && Array.isArray(data.providers) ? data.providers : []; return provs }
 const CODE = { 'openai-codex': 'codex' }
 """
+# The v0.4.x source anchors: no WARN_PCT/CODE map, the bar reads p.code, and
+# staleBackend keeps its own two-space provider loop.
+SOURCE_V04 = """const USAGE_KEY = ['plugin-provider-usage', 'backend']
+
+const INTERVALS = [
+const $barProviders = atom(null)
+    if (Array.isArray(bar)) $barProviders.set(bar)
+    for (const p of data.providers) {
+  for (const p of data.providers) {
+      code: p.code || p.id,
+  return barContent(barModel(data.providers || [], barSet, sessionProvider, mode, avail, choice))
+  const rows = data && Array.isArray(data.providers) ? data.providers : []
+  const provs = data && Array.isArray(data.providers) ? data.providers : []
+"""
 
 
 class UsageFilterTests(unittest.TestCase):
@@ -147,6 +161,29 @@ console.log(JSON.stringify({restored, next, input: bar}));
             self.assertEqual(cases['fresh']['bar'], 'gpt 85% · claude 91%')
             self.assertEqual(cases['mixed-hidden-choice']['savedBar'], ['openrouter'])
             self.assertEqual(cases['explicit-empty']['bar'], '')
+
+    def test_v04_source_adapts_once(self):
+        result = installer.adapt(SOURCE_V04)
+        self.assertIn(installer.BLOCK + '\nconst INTERVALS = [', result)
+        self.assertIn('    for (const p of setupUsageProviders(data)) {', result)
+        self.assertIn('\n  for (const p of data.providers) {', result)  # staleBackend unchanged
+        self.assertIn("code: p.id === 'openai-codex' ? 'gpt' : p.code || p.id,", result)
+        self.assertIn('barModel(setupUsageProviders(data), barSet', result)
+        self.assertIn('const $barProviders = atom([...SETUP_USAGE_PROVIDERS])', result)
+        self.assertEqual(installer.adapt(result), result)
+        with self.assertRaises(ValueError):
+            installer.adapt(result.replace('const rows = setupUsageProviders(data)',
+                                           'const rows = data && Array.isArray(data.providers) ? data.providers : []'))
+
+    def test_v04_source_with_prior_adapted_mirror(self):
+        # update.sh adapts the new source and the old desktop copy, then copies the source over.
+        prior = installer.adapt(SOURCE)
+        self.source.write_text(SOURCE_V04)
+        self.mirror.write_text(prior)
+        result = installer.install(self.home, apply=True)
+        self.assertEqual([r['status'] for r in result['files']], ['changed', 'unchanged'])
+        self.assertEqual(self.source.read_text(), installer.adapt(SOURCE_V04))
+        self.assertEqual(self.mirror.read_text(), prior)
 
     def test_unrelated_customization_preserved(self):
         source = SOURCE + '\n// Keep my refresh interval customization.\n'

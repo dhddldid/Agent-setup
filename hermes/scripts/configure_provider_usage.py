@@ -30,14 +30,32 @@ RULES = (
      'const provs = setupUsageProviders(data)'),
     ("'openai-codex': 'codex'", "'openai-codex': 'gpt'"),
 )
-ANCHOR = 'const WARN_PCT = 80'
+# v0.4: the bar reads p.code from the payload, and staleBackend keeps reading
+# every provider (it detects an old dashboard backend).
+RULES_V04 = (
+    RULES[0],
+    RULES[1],
+    ('    for (const p of data.providers) {', '    for (const p of setupUsageProviders(data)) {'),
+    ('barModel(data.providers || [], barSet', 'barModel(setupUsageProviders(data), barSet'),
+    RULES[4],
+    RULES[5],
+    ('code: p.code || p.id,', "code: p.id === 'openai-codex' ? 'gpt' : p.code || p.id,"),
+)
+# (anchor the block is inserted before, rules), oldest first; v0.2 sources also
+# contain the v0.4 anchor, so the first profile that fits wins.
+PROFILES = (('const WARN_PCT = 80', RULES), ('const INTERVALS = [', RULES_V04))
+
+
+def fits(text, anchor, rules):
+    return text.count(anchor) == 1 and all(text.count(old) == 1 and new not in text for old, new in rules)
 
 
 def adapt(source):
     newline = '\r\n' if '\r\n' in source else '\n'
     text = source.replace('\r\n', '\n')
     if START in text or END in text:
-        if text.count(START) != 1 or text.count(END) != 1 or BLOCK + '\n' + ANCHOR not in text:
+        profile = next((rules for anchor, rules in PROFILES if BLOCK + '\n' + anchor in text), None)
+        if text.count(START) != 1 or text.count(END) != 1 or profile is None:
             raise ValueError('Managed display filter differs; existing file preserved')
         remainder = text.replace(BLOCK + '\n', '', 1)
         # Upgrade only the complete, exact prior adapter. Validate all guards
@@ -45,7 +63,7 @@ def adapt(source):
         legacy_restore = 'if (Array.isArray(bar)) $barProviders.set(bar.filter(id => SETUP_USAGE_PROVIDERS.includes(id)))'
         restore = RULES[1][1]
         prior = legacy_restore in remainder
-        rules = tuple((old, legacy_restore if new == restore and prior else new) for old, new in RULES)
+        rules = tuple((old, legacy_restore if new == restore and prior else new) for old, new in profile)
         for old, new in rules:
             expected = sum(replacement == new for original, replacement in rules)
             if remainder.count(new) != expected or old in remainder:
@@ -55,13 +73,14 @@ def adapt(source):
                 raise ValueError('Mixed display filter versions; existing file preserved')
             return text.replace(legacy_restore, restore, 1).replace('\n', newline)
         return source
-    if text.count(ANCHOR) != 1:
+    if not any(text.count(anchor) == 1 for anchor, rules in PROFILES):
         raise ValueError('Unsupported plugin source; review the installed version')
-    for old, new in RULES:
-        if text.count(old) != 1 or new in text:
-            raise ValueError('Unsupported or customized display code; existing file preserved')
-    text = text.replace(ANCHOR, BLOCK + '\n' + ANCHOR, 1)
-    for old, new in RULES:
+    profile = next(((anchor, rules) for anchor, rules in PROFILES if fits(text, anchor, rules)), None)
+    if profile is None:
+        raise ValueError('Unsupported or customized display code; existing file preserved')
+    anchor, rules = profile
+    text = text.replace(anchor, BLOCK + '\n' + anchor, 1)
+    for old, new in rules:
         text = text.replace(old, new, 1)
     return text.replace('\n', newline)
 
