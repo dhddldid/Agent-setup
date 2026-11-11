@@ -9,7 +9,7 @@
 - GAM·CodeGraph와 외부 스킬은 설치기가 실행할 때마다 원본의 최신 정식 릴리스를 조회해 설치한다. `scripts/setup_runtime.py`는 CodeGraph를 최신 정식 태그의 npm 패키지로, GAM을 최신 정식 태그 커밋에서 `uv tool install`로 설치하고, 결정한 태그·커밋을 `~/Library/Application Support/codex-setup/tool-releases.json`에 기록한다. 정식 릴리스를 내지 않는 원본은 기본 브랜치의 최신 커밋을 받는다.
 - `inventories/tools.lock.json`과 `inventories/external-skills.json`에는 원본 저장소·패키지·설치 방법·스킬 경로만 둔다. `config/models.json`은 검증한 모델 식별자 기준이다. 설치 결과는 버전 번호와 함께 실제 도구 동작으로 확인한다.
 - 새 정식 릴리스가 설치에 실패하면 실패한 단계와 오류를 보고하고 원인을 고친다. Ollama 서비스·모델·임베딩 응답은 GAM과 별도로 확인한다.
-- 이미 설치된 외부 스킬은 `scripts/install_external_skills.py --all --apply --refresh`로 최신 정식판과 대조한다. 설치 당시와 같은 폴더만 교체하고, 사용자가 고친 폴더는 백업 후 `--replace-existing`으로 교체할지 사용자 요청 범위에서 정한다.
+- 이미 설치된 외부 스킬은 `scripts/install_external_skills.py --all --apply --refresh`로 최신 정식판과 대조한다. 설치 당시와 같은 폴더만 교체하고, 설명 줄 외에 사용자가 고친 폴더는 `--replace-existing`에서도 그대로 남는다.
 - 설치 뒤 업데이트는 Agent-setup 루트의 `bash scripts/update_claude_codex.sh` 한 줄로 한다. OMH 스킬 사본을 최신 정식 태그로 맞추고 관리 지침·공통 스킬·외부 스킬을 다시 설치한다.
 
 ## 완료 조건
