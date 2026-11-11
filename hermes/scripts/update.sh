@@ -169,10 +169,17 @@ if [[ $HERMES_INSTALLED == "$HERMES_LATEST" ]]; then
   info "이미 최신 정식 v${HERMES_LATEST}입니다. 건너뜁니다."
 else
   info '설정·대화 백업을 만든 뒤 로컬 수정을 stash에 보관하고 새 버전 위에 자동으로 다시 적용합니다.'
-  act hermes update --backup --yes \
-    || die 'hermes update가 실패했습니다. 위 출력에서 실패 단계와 업데이트 전 백업 위치를 확인하세요.'
+  HERMES_UPDATE_RC=0
+  act hermes update --backup --yes || HERMES_UPDATE_RC=$?
   if [[ $MODE == run ]]; then
     resolve_hermes
+    # hermes update exits non-zero when restoring the old local edits conflicts, even though the
+    # new release is installed. The tag patch below re-applies the edits, so continue in that case.
+    if [[ $HERMES_UPDATE_RC -ne 0 ]]; then
+      [[ $HERMES_INSTALLED == "$HERMES_LATEST" ]] \
+        || die 'hermes update가 실패했습니다. 위 출력에서 실패 단계와 업데이트 전 백업 위치를 확인하세요.'
+      warn "hermes update가 종료 코드 ${HERMES_UPDATE_RC}로 끝났지만 v${HERMES_LATEST}는 설치됐습니다. 이전 로컬 수정 복원 충돌로 보고 다음 단계의 v${HERMES_LATEST} 수정 묶음으로 다시 적용합니다."
+    fi
     STASH_AFTER=$(autostashes)
     if [[ $STASH_AFTER -gt $STASH_BEFORE ]]; then
       warn '로컬 수정 재적용 중 충돌이 나서 Hermes가 새 stash를 보관했습니다. 다음 단계의 패치 적용으로 복구합니다.'
