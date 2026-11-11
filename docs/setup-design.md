@@ -26,7 +26,7 @@ Agent-setup은 **AI 작업 환경** 설치 원본이다. 처음 쓰는 사람이
 
 ### 원칙
 
-- OMH 스킬 153개는 Hermes에서는 OMH 설치기로, Claude Code·Codex에서는 `shared/skills/omh/` 사본(현재 OMH 4.0.6)으로 설치한다. `bash scripts/update_claude_codex.sh`가 OMH 최신 정식 태그를 조회해 사본 버전과 다르면 공식 태그 원본을 `scripts/import_omh_skills.py`로 가져오고(frontmatter만 정리, 버전은 `SOURCE.json`), 두 실행기 설치본까지 갱신한다. Claude Code·Codex 전역 지침의 `OMH workflow skills` 절이 작업 형태로 OMH 흐름을 먼저 고르게 하고(여러 부분·선후관계·확정 계획 구현→`ulw-work`, 반복 목표→`ulw-loop`, 미정 계획→`ulw-plan`·`omh-plan`, 검토→`omh-code-review`, 완료 판정→`omh-verification-gate`), 개인·프로젝트 스킬은 고른 흐름 안에서 쓰게 한다. 같은 절이 `omh_*` 도구를 각 실행기의 할 일 목록·GAM·위임·CodeGraph·파일 기록으로 대응시킨다. 화면 작업의 `product-design-review`는 OMH frontend·visual-qa를 기준으로 직접 구현·검증한다. 레지스트리·차트·스타일 세부 기준은 OMH `main`의 2026-10-09 커밋 내용을 참고 자료로 쓴다.
+- OMH 스킬 155개는 Hermes에서는 OMH 설치기로, Claude Code·Codex에서는 `shared/skills/omh/` 사본(현재 OMH 4.0.7)으로 설치한다. `bash scripts/update_claude_codex.sh`가 OMH 최신 정식 태그를 조회해 사본 버전과 다르면 공식 태그 원본을 `scripts/import_omh_skills.py`로 가져오고(frontmatter만 정리, 버전은 `SOURCE.json`), 두 실행기 설치본까지 갱신한다. Claude Code·Codex 전역 지침의 `OMH workflow skills` 절이 작업 형태로 OMH 흐름을 먼저 고르게 하고(여러 부분·선후관계·확정 계획 구현→`ulw-work`, 반복 목표→`ulw-loop`, 미정 계획→`ulw-plan`·`omh-plan`, 검토→`omh-code-review`, 완료 판정→`omh-verification-gate`), 개인·프로젝트 스킬은 고른 흐름 안에서 쓰게 한다. 같은 절이 `omh_*` 도구를 각 실행기의 할 일 목록·GAM·위임·CodeGraph·파일 기록으로 대응시킨다. 화면 작업의 `product-design-review`는 OMH frontend·visual-qa를 기준으로 직접 구현·검증한다. 레지스트리·차트·스타일 세부 기준은 OMH `main`의 2026-10-09 커밋 내용을 참고 자료로 쓴다.
 - 공통 스킬 원본은 `shared/skills/core/` 한 곳이다. Claude 설치기와 Codex 설치기가 같은 원본을 설치하고, 실행기마다 다른 내용은 전역 AGENTS.md의 `모델 라우팅` 구간이 맡는다.
 - 직접 관리하는 선택 스킬은 `shared/skills/packs/`에, 외부 스킬 목록(원본 저장소·스킬 경로)은 실행기별 manifest에 둔다. 버전은 설치할 때 원본별 최신 정식 릴리스 태그로 정해진다. 현재 설치기는 외부 스킬 39개를 기본 대상으로 처리한다. 선택 설치로 바꾸는 작업은 7절의 예정 항목이다.
 
@@ -57,10 +57,10 @@ Agent-setup은 **AI 작업 환경** 설치 원본이다. 처음 쓰는 사람이
 | 실행기 | 위치 | 스킬 |
 |---|---|---|
 | Claude Code | `claude/skills/` | `codex`: GPT 항목·사용자 지정·독립 리뷰 때 Codex 플러그인으로 넘기고 결과 회수, 실패 시 다음 항목 |
-| Codex | — | 전용 스킬 없음 (공통 49개 + OMH 153개 + 외부 39개) |
+| Codex | — | 전용 스킬 없음 (공통 49개 + OMH 155개 + 외부 39개) |
 | Hermes | `hermes/manifest.json` | Hermes 공식 스킬 57개 + 공통 34개(도구·기준 12개와 Hermes 작업 교훈 공개본 22개) + Hermes 전용 `dag-ulw-notes`, OMH |
 
-설치 결과: Claude Code 242개(공통 49 + OMH 153 + codex + 외부 39), Codex 241개(공통 49 + OMH 153 + 외부 39), Hermes 131개(공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 153개. 스킬별 표는 [스킬 표](skills.md).
+설치 결과: Claude Code 244개(공통 49 + OMH 155 + codex + 외부 39), Codex 243개(공통 49 + OMH 155 + 외부 39), Hermes 131개(공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 155개. 스킬별 표는 [스킬 표](skills.md).
 
 ### 선택 묶음
 

@@ -4,9 +4,9 @@
 
 | AI | 기본 설치 | 구성 |
 |---|---|---|
-| Claude Code | 242 | 공통 49 + OMH 153 + codex + 외부 39 |
-| Codex | 241 | 공통 49 + OMH 153 + 외부 39 |
-| Hermes | 131 + OMH 153 | Hermes 공식 57 + 공통 34 + Hermes 전용 1(dag-ulw-notes) + 외부 39 + OMH 153 |
+| Claude Code | 244 | 공통 49 + OMH 155 + codex + 외부 39 |
+| Codex | 243 | 공통 49 + OMH 155 + 외부 39 |
+| Hermes | 131 + OMH 155 | Hermes 공식 57 + 공통 34 + Hermes 전용 1(dag-ulw-notes) + 외부 39 + OMH 155 |
 
 ## 1. 공통 스킬과 AI 전용 스킬 (51)
 
@@ -174,9 +174,9 @@
 | 56 | 개발 | test-driven-development | 실패 테스트부터 구현 | — | — | ✅ | 공통 스킬 tdd와 같은 역할 | Agent-setup (Hermes) | — |
 | 57 | 웹 | blocked-page-recovery | 차단·로그인 벽 페이지 접근 복구 | — | — | ✅ | Hermes 도구·경로를 고쳐야 쓸 수 있음 | Agent-setup (Hermes) | — |
 
-## 4. OMH 스킬 (153)
+## 4. OMH 스킬 (155)
 
-Hermes는 OMH 설치기로, Claude Code·Codex는 Agent-setup의 `shared/skills/omh/` 사본(현재 OMH 4.0.6, `bash scripts/update_claude_codex.sh`가 최신 정식 태그와 다를 때 공식 태그 원본에서 다시 가져옴)으로 같은 스킬을 받는다. Claude·Codex에서는 전역 지침의 `OMH workflow skills` 절이 작업 형태로 OMH 흐름(`ulw-work`·`ulw-loop`·`ulw-plan`·`omh-code-review`·`omh-verification-gate`)을 먼저 고르게 하고, `omh_*` 도구를 실행기 도구로 대응시킨다. `dag-ulw`는 Hermes `omh_dag` 도구로 실행되며 Claude·Codex에서는 `ulw-work` 작업 줄로 처리한다. 아래 "pycoding-prompt 관계"가 있는 18개는 프로젝트 기준과 겹치므로 프로젝트에서는 pycoding-prompt 기준을 우선한다.
+Hermes는 OMH 설치기로, Claude Code·Codex는 Agent-setup의 `shared/skills/omh/` 사본(현재 OMH 4.0.7, `bash scripts/update_claude_codex.sh`가 최신 정식 태그와 다를 때 공식 태그 원본에서 다시 가져옴)으로 같은 스킬을 받는다. Claude·Codex에서는 전역 지침의 `OMH workflow skills` 절이 작업 형태로 OMH 흐름(`ulw-work`·`ulw-loop`·`ulw-plan`·`omh-code-review`·`omh-verification-gate`)을 먼저 고르게 하고, `omh_*` 도구를 실행기 도구로 대응시킨다. `dag-ulw`는 Hermes `omh_dag` 도구로 실행되며 Claude·Codex에서는 `ulw-work` 작업 줄로 처리한다. 아래 "pycoding-prompt 관계"가 있는 18개는 프로젝트 기준과 겹치므로 프로젝트에서는 pycoding-prompt 기준을 우선한다.
 
 | # | 역할 폴더 | 스킬 | 하는 일 | Claude | Codex | Hermes | pycoding-prompt 관계 |
 |---|---|---|---|---|---|---|---|
@@ -333,6 +333,8 @@ Hermes는 OMH 설치기로, Claude Code·Codex는 Agent-setup의 `shared/skills/
 | 151 | ultrawork | ulw-qa | 적대적 QA 시나리오 생성 | ✅ | ✅ | ✅ | — |
 | 152 | ultrawork | ulw-research | 의사결정 전 심층 리서치 | ✅ | ✅ | ✅ | — |
 | 153 | ultrawork | ulw-work | 승인 계획 의존성 기반 실행 | ✅ | ✅ | ✅ | — |
+| 154 | planner | omh-model-compression | 모델 양자화·가지치기·증류로 경량화 | ✅ | ✅ | ✅ | — |
+| 155 | researcher | omh-systematic-review | 체계적 문헌고찰 두 명 독립 선별·병합 | ✅ | ✅ | ✅ | — |
 
 ## 5. pycoding-prompt와의 적용 경계
 

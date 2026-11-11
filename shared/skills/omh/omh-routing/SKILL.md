@@ -46,8 +46,8 @@ Bad example:
 
 ## Recovery Notes
 
-- If routing signals conflict, show the compact picker or ask one clarifying question.
-- If wrapper metadata is unavailable, keep the recommendation advisory and avoid runtime claims.
+- If a skill is not installed, keep the intent; hand back the install gap as unresolved.
+- If executor readiness is unknown, keep routing; hand back the check as not_observed.
 
 ## OMH Awareness Primer (Compact)
 
@@ -73,7 +73,7 @@ Treat OMH as the operating layer above individual Hermes-native skills. For a wo
 
 ## Priority Rules
 
-1. Exact or near-exact OMH maintenance commands (`omh update`, `omh setup`, `omh doctor`, `omh uninstall`, `omh install`, `omh list`, and Korean equivalents such as `omh 업데이트해줘`, `omh 닥터 돌려줘`, `omh 삭제해줘`, `omh 셋업해줘`) route as `operator_maintenance_command`. Run the requested command, report observed output, and avoid repo mutation unless the user separately asks for code changes.
+1. Exact or near-exact OMH maintenance commands (`omh update`, `omh setup`, `omh doctor`, `omh uninstall`, `omh install`, `omh list`, and Korean forms such as `omh 업데이트해줘`, `omh 닥터 돌려줘`, `omh 삭제해줘`, `omh 셋업해줘`) route as `operator_maintenance_command`. Run the requested command, report observed output, and avoid repo mutation unless asked. `omh uninstall`: `--dry-run`, then confirm.
 2. Explicit slash skill invocation wins when it is not one of those maintenance commands.
 3. Explicit workflow keywords route to the matching adapted skill when installed.
 4. Broad planning requests route to `ralplan` or `plan` before implementation.
@@ -119,7 +119,7 @@ Record only what is observed. A task card, route, plan, `coding_delegation.json`
   - native subagents -> Hermes delegation when available, otherwise sequential lanes,
   - shell bridge commands -> optional bridge mode only.
 - Record observed delegation results when exposed. If unavailable, record `not_available` or `not_observed`.
-- Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
+- Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only. When the requested output is delivered, put any open points inside the result and end with no question or offer; only when the person asked to choose or decide and that choice is still theirs, end with one specific question about it, not a list, a generic offer, or a footer; the shared rail's Reply Language And Host Voice and Turn Ending sections hold the full rule.
 
 ## Progressive Disclosure References
 
@@ -134,6 +134,7 @@ Load these only when exact detail matters:
 - `references/evidence-boundaries.md` for prepared-vs-observed, target topology, memory, and compatibility rules.
 - `references/structural-code-search.md` for ast-grep structural code search patterns and the grep fallback.
 - `references/human-voice.md` before writing prose a person reads: AI-writing tells to remove, Korean habits, reply shape.
+- `references/skill-common-rail.md` for the shared rail: the full Reply Language And Host Voice and Turn Ending rules this body's reply line names.
 
 ## Recovery
 

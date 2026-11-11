@@ -11,6 +11,11 @@
    this run, including non-dag `delegate_task` calls. If the host's one-shot detector itself
    cannot be read, define is refused as `oneshot_detection_unavailable` rather than run uncapped;
    `ready`, `settle`, `repair` and `extend` refuse it the same way, and the record is untouched.
+   The nodes share one worktree: dependents and the verify node read earlier nodes' edits from it. With
+   Hermes' `delegation.worktree_isolation` on and a local terminal, each child would start from the last
+   commit without them, so define is refused as `worktree_isolation_on`, and a run defined before it was
+   turned on hands out no call while it is on (`status` says why). OMH never writes the setting: relay the
+   say, which names `hermes config set delegation.worktree_isolation false` for the person to run.
    Each node's `role` says what it is for: `build` (the default), `baseline`, `verify` or `review`; any
    other role is refused. Only a `verify` node verifies the goal, and every other node with a `write_scope`
    is a producer it has to follow. A node with no role that writes files and whose label opens with a check
@@ -32,6 +37,12 @@
    (a retry takes the category's next option; a category no option matches carries none and runs on the
    backend's default). Under `profile_routes` OMH picks no profile: the tasks go as they are. Views name the
    option Hermes reports the child ran on, and a lane keeps its category only when that is the option handed out.
+   In `swarm`, `quick` and `simple-work` an option with a fast `service_tier` is tried before the same model's
+   normal one; elsewhere the normal one leads. Mark a node `local: true` when its material must not leave the
+   machine (customer data, keys, private documents): it runs only on a `model_map` option whose `base_url` is
+   on this machine or its private network (or provider `lmstudio`/`llamacpp`), a retry takes the next local
+   one, and with none left it is listed in `held_for_local_model`, never sent to a cloud model. Tell the
+   person; they add a local option or the node is settled blocked.
 3. `calls` never exceeds the free background slots (`slots.free`): a call past them would run blocking.
    In a one-shot session, `calls` also never carries more tasks than the remaining one-shot budget;
    nodes past it are listed in `held_for_slots`, and `slots.oneshot` shows the limit, the spent count
@@ -125,24 +136,34 @@ In the TUI a completion per node is fine; the panel and `/dag` draw the graph.
 
 ## External coding owner
 
-The choice is the router's explicit-choice record (`coding_owner_preference/v1`): the person picked Codex
-or Claude Code when asked, or named it in a request, through `omh chat` or `omh coding`. Hermes chat on its
-own records no choice, so there every node runs on `delegate_task`. The record is read exactly as the router
-reads it, and dag-ulw adds one rule of its own: a choice counts for a day. An external coding CLI spends
-the person's money and quota, so a choice older than 24 hours (or dated in the future) starts nothing; the
-person names the owner again.
+A coding-owner choice counts only for the request it was made in, as it does for `ulw-maestro`: an
+external coding CLI spends the person's money and quota. The person chooses by naming Codex or Claude Code,
+or both, in a request that invokes dag-ulw (`/dag-ulw <goal> with codex`, `dag-ulw로 ... codex로`); a
+request that only reads as big work, without invoking dag-ulw, names no owner. `define` keeps the owners
+that request named for the whole run, and only for that run. An earlier request's choice, a choice made in
+`omh chat` or `omh coding`, and a recorded preference never count. When the person wants an external owner
+and this request names none, ask them to name it in a request that invokes dag-ulw; do not reuse an
+earlier one. Defining the same run again changes nothing, so a newly named owner needs a new run id (or
+cancel this run and define one under a new id; a cancelled run id is not defined again).
 
 With such a choice:
 
-- `ready`, `settle`, `repair` and `extend` keep the ready coding nodes out of `calls` and list them in
-  `export`. A coding node is a `build` node that writes files (`write_scope`): baseline, verify and review
-  nodes always run on `delegate_task`, because the builder never approves itself. So does a node sent with
-  no role whose label reads like another (`role_guess`); send `role=build` to export it.
-- `omh_dag action=export owner=<codex|claude-code>` writes those nodes, and the waiting coding nodes
-  whose every open parent goes with them, as a `fanout_contract/v2` units file and a goal file, and
-  returns the two `omh coding fanout` commands to run (`prepare`, then `dispatch`). More than four units
-  need a `spawn_plan`.
+- A coding node may carry `owner: codex` or `owner: claude-code`. Only coding nodes may carry it: a coding
+  node is a `build` node that writes files (`write_scope`). Baseline, verify and review nodes always run
+  on `delegate_task`, because the builder never approves itself. So does a node sent with no role whose
+  label reads like another (`role_guess`); send `role=build` to export it.
+- A node that names an owner the request chose goes to that owner; one that names an unchosen owner runs on
+  `delegate_task`, not another owner. A node that names no owner runs on `delegate_task`, whatever was chosen.
+- `ready`, `settle`, `repair` and `extend` keep chosen-owner coding nodes out of `calls` and list batches
+  in `exports`, one entry per owner, sorted by owner (`owner`, `nodes`, `next`). `status` shows the same
+  split. The unchanged single-owner `export` object appears only when `exports` has exactly one entry.
+- Call `omh_dag action=export owner=<codex|claude-code>` once per listed owner. Each writes that owner's
+  ready nodes and waiting coding nodes whose every open parent joins the same batch as a `fanout_contract/v2`
+  units file and a goal file, returning the commands to run: `omh coding fanout prepare` then `dispatch`, or one
+  `omh coding run` for a single node.
+  A node waiting on another owner or a native node waits until that parent settles before export.
+  More than four units need a `spawn_plan`.
 - An exported node is never handed to `delegate_task` again, however long its fanout runs. Settle it from
   the fanout result, writing its handoff file from that result.
 
-Without that choice every node runs on `delegate_task`.
+Without that request's choice, a node runs on `delegate_task`.

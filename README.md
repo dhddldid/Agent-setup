@@ -132,7 +132,7 @@ Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각�
 | 항목 | Claude Code | Codex | Hermes |
 |---|---|---|---|
 | 모델 라우팅 | 12개 분류별 Claude 하위 에이전트 + GPT는 Codex 플러그인 | 12개 분류별 GPT 모델·추론 | OMH 프리셋 |
-| 스킬 | 242개 (공통 49 + OMH 153 + codex + 외부 39) | 241개 (공통 49 + OMH 153 + 외부 39) | 131개 (공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 153 |
+| 스킬 | 244개 (공통 49 + OMH 155 + codex + 외부 39) | 243개 (공통 49 + OMH 155 + 외부 39) | 131개 (공식 57 + 공통 34 + Hermes 전용 1 + 외부 39) + OMH 155 |
 | 전역 지침 | `~/.claude/AGENTS.md` | `~/.codex/AGENTS.md` | `SOUL.md` 관리 구간 |
 | 코드 탐색 | CodeGraph | CodeGraph | CodeGraph |
 | 기억 | GAM | GAM | GAM + Hermes 메모리 |
@@ -148,7 +148,7 @@ Hermes는 **분류별 후보 순서**와 **실행 중 공통 fallback**을 각�
 | 작업 원칙 | 16 | coding-plan·coding-work·coding-handoff·coding-status·coding-research·coding-repair·coding-code-review·coding-verification·coding-design-review·coding-failure-audit·coding-debt-audit·coding-ai-slop-review·diagnosing-bugs·tdd·ponytail·product-design-review | ✅ | ✅ | OMH가 같은 일 |
 | 도구·글쓰기·디자인 | 11 | codegraph-context·gam-memory·coding-maintenance·agent-setup-maintenance·aside-browser·humanize-korean·humanizer·writing-for-agents·shadcn·shadcn-lint·logo-design | ✅ | ✅ | ✅ (writing-for-agents 제외) |
 | Hermes 작업 교훈 | 22 | 운영 실패 진단·관리 API 일괄 작업·서비스 인프라 설계·읽기 모델 성능·SQLite 시험 기록·서브프로세스 기한·미디어 제작·모바일 앱 베타·Android 기기 검증·참고 링크 도입 검토 등 | ✅ | ✅ | ✅ |
-| OMH 워크플로 | 153 | 계획(planner 19)·검토(reviewer 23)·운영(operator 44)·안내(guide 21)·추적(tracker 18)·ultrawork 10·조사(researcher 10)·기억(memory-keeper 5)·인계(handoff-guide 3) | ✅ 사본 (OMH 4.0.6) | ✅ 사본 (OMH 4.0.6) | ✅ OMH 설치기 |
+| OMH 워크플로 | 155 | 계획(planner 19)·검토(reviewer 23)·운영(operator 44)·안내(guide 21)·추적(tracker 18)·ultrawork 10·조사(researcher 10)·기억(memory-keeper 5)·인계(handoff-guide 3) | ✅ 사본 (OMH 4.0.7) | ✅ 사본 (OMH 4.0.7) | ✅ OMH 설치기 |
 | 외부 업무 | 39 | Azure·Entra 26, Azure 비용 4, 마케팅 5 (seo-audit·aso·analytics·cro·copywriting), 모션 디자인 2 (motion-design·hyperframes-animation), archify, iterative-retrieval | ✅ | ✅ | ✅ |
 | Hermes 공식 | 57 | Hermes 내장 도구용 스킬 (메일·문서·미디어·연구 등) | — | — | ✅ |
 | 실행기 전용 | 1 | codex: GPT 항목을 Codex 플러그인으로 넘기고 결과 회수 | ✅ | — | — |
@@ -161,7 +161,7 @@ Hermes에는 Agent-setup이 설치한 구성과 OMH가 설치한 구성이 함�
 
 | 영역 | Agent-setup에만 | OMH에만 | 둘 다 있을 때 |
 |---|---|---|---|
-| 스킬 | 공식 57·공통·외부 스킬, 작업 중 만든 스킬 (`~/.hermes/skills`) | 워크플로 153개 (`~/.local/share/omh/current/skills`) | 같은 이름이면 `프로젝트 → ~/.hermes/skills → 외부 폴더(OMH)` 순서로 Agent-setup 쪽을 쓴다. 역할만 겹치면 요청에 맞는 쪽을 고른다 |
+| 스킬 | 공식 57·공통·외부 스킬, 작업 중 만든 스킬 (`~/.hermes/skills`) | 워크플로 155개 (`~/.local/share/omh/current/skills`) | 같은 이름이면 `프로젝트 → ~/.hermes/skills → 외부 폴더(OMH)` 순서로 Agent-setup 쪽을 쓴다. 역할만 겹치면 요청에 맞는 쪽을 고른다 |
 | 지침 | `SOUL.md`의 공통 원칙·OMH 워크플로 사용(작업 형태로 OMH 흐름을 먼저 고르고 사용자 스킬은 그 안에서 사용, 위임 전 OMH 라우팅)·Aside·문서 전달 | 매 턴 분류 힌트, 프로젝트 `AGENTS.md`의 OMH 구간 | 사용자 지시 → 프로젝트 `AGENTS.md` → 전역 지침 순서. 말투·언어는 `SOUL.md` |
 | 모델 라우팅 | 설치 프리셋, 메인 대화 기본 모델 | 분류별 기본 체인, 실행값 `~/.omh/routing/model-chains.json` | 프리셋을 넣은 분류는 `override`로 OMH 기본값보다 우선하고 업데이트 뒤에도 유지된다. 하위 에이전트에만 적용되고 메인 대화·cron은 Hermes 기본 모델 |
 | 기억 | GAM: 프로젝트 결정·해결 경험 | OMH 기억: Hermes 작업 교훈 | 프로젝트 지식은 GAM에 두어 세 AI가 함께 쓴다 |

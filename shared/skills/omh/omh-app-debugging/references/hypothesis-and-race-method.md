@@ -20,6 +20,8 @@ The order never changes: an observed reproduction, then competing hypotheses, th
 
 An intermittent fault is reproduced when its rate is measured, not when it happened once. Run it in a loop first (`for i in $(seq 50); do <cmd> || echo FAIL $i; done`) and record the rate before changing anything; the same loop is what proves the fix later.
 
+**Size N from the rate before the fix.** With a failure rate p, an ineffective fix still passes all N runs with probability (1 - p) to the power N: at p = 0.02 and N = 50 that is 36%, at p = 0.2 and N = 20 it is 1%. Choose N >= ln(0.05) / ln(1 - p), about 3 / p, record it beside the rate (4/20 before gives N >= 14), and run the fix at that N. When N is too costly, say the fix is unproven at that confidence.
+
 If a capture is too redacted to diagnose, record that and ask for a narrower one; never record it unredacted.
 
 **Make the loop cheap before trusting it.** A loop that takes minutes per run is the next thing to fix, ahead of any hypothesis: narrow what it runs, skip setup the fault does not need, and assert the reported symptom rather than "it did not crash". What to do about variation depends on the fault:
@@ -41,7 +43,7 @@ Choose the loop by what the fault needs; any row that yields one command going r
 | shows through an interface the repository serves | a test at whichever seam reaches the path; a request script against a local server; the CLI on a fixture with its output diffed against a known-good copy; a headless browser script asserting on the page, console, or network |
 | needs an input the repository cannot recreate | the captured payload or event log, saved to disk and replayed through the path alone; or a throwaway harness calling the path directly, with fakes only where the process leaves the repository's control |
 | shows only for some inputs | a property or fuzz loop over generated inputs |
-| appeared between two versions or two configurations | a differential run diffing both outputs for one input; or a bisect harness, handed to `git-workflow` as `bisect_plan/v1` |
+| appeared between two versions or two configurations | a differential run diffing both outputs for one input; or a bisect harness, handed to `omh-git-workflow` as `bisect_plan/v1` |
 | can be triggered only by a person, on a device, a GUI, or a third-party console | numbered steps for the person, and named fields reported after every run -- failed or not, the message as shown, the time -- so each run returns the same fields; the record takes them as user-observed. This is an observation capture: nobody is asked to approve anything |
 
 If no row yields a loop, `reproduction_record/v1` stays not_observed and lists each loop attempted and what stopped it. The request to the user is then for one of: an environment where the fault reproduces, a redacted capture (a log, a trace, a timestamped recording), or permission for tagged temporary instrumentation. `competing_hypotheses/v1` waits for an observed record.
@@ -91,7 +93,7 @@ Before trusting any reading, confirm the process executed the source you are loo
 
 - A stale editable install or build directory serves an older copy of a module; a newly added file is then missing and the failure reads as a regression in whoever added it.
 - A cached bytecode file is validated by timestamp and size, so two edits of equal length in the same second can reuse the old compile.
-- A test that reads its own teardown output, or a lock that times out inside a best-effort swallow, leaves the same trace as the fault being hunted; put the discriminator in the assertion message.
+- A process started before the edit, a container image built from an older commit, or a `PYTHONPATH` or `NODE_PATH` that shadows the checkout serves old code: print the module's file path and version from inside the failing run.
 
 ## 6. After three failed fixes
 

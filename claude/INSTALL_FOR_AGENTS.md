@@ -9,7 +9,7 @@
 | Claude Code | 설치·로그인 상태 |
 | Codex 플러그인 | `openai/codex-plugin-cc`의 `codex@openai-codex`와 Codex CLI 로그인. GPT 라우팅 항목을 실행한다. 사용자가 GPT를 쓰지 않으면 생략하고, 그 항목은 다음 Claude 항목으로 넘어간다 |
 | 모델 라우팅 | Claude 넉넉형 (사용자가 원하면 GPT 넉넉형). 분류별 하위 에이전트 25개와 `agent-setup/routing.json` |
-| 스킬 | [스킬 표](../docs/skills.md)의 Claude 열 (공통 49개 + OMH 153개 + codex + 외부 39개) |
+| 스킬 | [스킬 표](../docs/skills.md)의 Claude 열 (공통 49개 + OMH 155개 + codex + 외부 39개) |
 | 전역 지침 | `~/.claude/AGENTS.md` 관리 구간, Claude Code가 읽도록 `~/.claude/CLAUDE.md`에 `@AGENTS.md` 한 줄 |
 | MCP | CodeGraph, GAM (사용자 범위) |
 | Aside | 공통 기준대로 |

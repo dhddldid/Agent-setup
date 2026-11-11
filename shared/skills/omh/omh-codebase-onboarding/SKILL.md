@@ -8,13 +8,14 @@ This is a Hermes-native `codebase-onboarding` workflow skill.
 
 ## Why This Exists
 
-`codebase-onboarding` adapts ECC's code-tour and onboarding surfaces into an OMH-native first-read workflow so unfamiliar repos become navigable before implementation pressure starts.
+`codebase-onboarding` exists so an unfamiliar repo gets a reading order, a glossary, and a first task that cite files that were opened, before implementation pressure starts; the surface is adapted from ECC's code-tour and onboarding work.
 
 ## Do Not Use When
 
 - The user already named a concrete implementation task and acceptance criteria; use `ulw-work` or `omh-idea-to-deploy`.
 - The user needs a whole-workspace capability inventory; use `omh-workspace-audit`.
 - The user wants a code diff review; use `omh-code-review`.
+- The user wants a picture of the structure; use `omh-codebase-uml`. The user wants the code index refreshed or a task-scoped handoff pack; use `omh-codegraph-refresh`.
 
 ## Examples
 
@@ -41,6 +42,7 @@ Bad example:
 
 ## Recovery Notes
 
+- If the audience or depth is not given, assume a new contributor and an architecture tour, read-only, and state the assumption in the first line.
 - If the repository is too large for the stated depth, narrow to the entrypoint the audience touches first and record the rest as unread rather than summarizing it from file names.
 - If a build, test, or setup command could not run (read-only mode, missing toolchain, secrets), list it in first_task_runway/v1 as not run with the reason, never as a known-good command. A command that installs or syncs dependencies as a side effect (`npm ci`, `uv sync`, and `uv run`, which syncs first) counts as setup and stays not run.
 - If docs and code disagree, report what the code does, cite both, and add the disagreement to risk_and_unknowns_map/v1 instead of trusting the docs.
@@ -48,8 +50,8 @@ Bad example:
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
-- If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
+- Current lane: **Intent -> plan** - clarify, plan, ship, or loop goals.
+- If intent belongs to another lane, hand back to `omh-routing` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
 ## When to Use
@@ -71,7 +73,8 @@ Quality bar:
 - Name the audience, depth, repo root, read-only boundary, and stop condition.
 - Separate observed files and commands from inferred architecture and unknowns.
 - Produce a practical reading path and first-task runway rather than a flat file tour.
-- Route follow-up implementation to plan, ultrawork, verification-gate, or workspace-audit as needed.
+- Route follow-up implementation to `omh-plan`, `ulw-work`, `omh-verification-gate`, or `omh-workspace-audit` as needed.
+- Take build, test, and lint commands in this order: CI config (`.github/workflows`, `.gitlab-ci.yml`), the task runner (`Makefile`, `justfile`, `package.json` scripts), the manifest, then contributor docs; read `CODEOWNERS` and the top-churn files for ownership; the README comes last, and where it disagrees with CI trust CI and record the disagreement.
 
 Handoff policy:
 
@@ -124,7 +127,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only. When the requested output is delivered, put any open points inside the result and end with no question or offer; only when the person asked to choose or decide and that choice is still theirs, end with one specific question about it, not a list, a generic offer, or a footer; the shared rail's Reply Language And Host Voice and Turn Ending sections hold the full rule.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

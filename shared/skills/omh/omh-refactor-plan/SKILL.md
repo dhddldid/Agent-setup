@@ -28,7 +28,7 @@ Good example:
 Bad example:
 
 - Prompt: Should we even split billing out of orders?
-- Expected behavior: Route to `ralplan`: the direction is not decided, so consensus planning comes before phase planning.
+- Expected behavior: Route to `ulw-plan`: the direction is not decided, so consensus planning comes before phase planning.
 - Why: A phase plan for a contested direction launders a decision through logistics.
 
 ## Completion Checklist
@@ -43,13 +43,14 @@ Bad example:
 
 - If the import graph is unavailable, build the codegraph first or reduce the plan's confidence and say which files are unverified.
 - If a phase cannot be made independently green, split it further; two half-phases beat one unabortable one.
-- If reconnaissance finds the direction itself is unsettled, route back to `ralplan` before ordering phases.
+- If no regression gate covers the affected files, open the plan with a Phase 0 of characterization tests, or say each phase is unverified and stop at the approval gate.
+- If reconnaissance finds the direction itself is unsettled, route back to `ulw-plan` before ordering phases.
 - If the module to deepen is chosen but its interface is not, shape it under contrasting constraints and recommend one design before phase 1; that is not a contested direction.
 
 ## Workflow Lane
 
-- Current lane: **Intent -> plan** (`oh-my-hermes`, `meta-router`, `deep-interview`, `context`, `plan`, `ralplan`, `adversarial-consensus`, `codebase-onboarding`, `+9 more`) - clarify, plan, ship, or loop goals.
-- If intent belongs to another lane, hand back to `oh-my-hermes` or name the adjacent workflow.
+- Current lane: **Intent -> plan** - clarify, plan, ship, or loop goals.
+- If intent belongs to another lane, hand back to `omh-routing` or name the adjacent workflow.
 - Shared product, routing, compatibility, and evidence rules: `skill_view(name='omh-routing', file_path='references/skill-common-rail.md')`.
 
 ## When to Use
@@ -102,7 +103,7 @@ Safety rules:
 - The plan comes from observed repo evidence, never from memory of the tree.
 - An upgrade plan is not ready while any breaking change lacks its call sites or an observed empty search, or any stage lacks its rollback; name the open rows instead of calling the bump safe to merge.
 - Every phase ends at a commit that could ship; a phase that cannot end green is split further.
-- Nothing is deleted before the cleanup phase, and cleanup starts from a tagged rollback point.
+- No production code is deleted before the cleanup phase (phase 4 may delete a test only when an interface-level test covers the same behavior, named in the plan), and cleanup starts from a tagged rollback point.
 - Do not begin implementing any phase without the user's explicit approval of the plan.
 
 ## Runtime Evidence
@@ -111,7 +112,7 @@ Record observed delegation results; otherwise return `not_available` or `not_obs
 Prepared OMH routing is not execution, review, CI, merge-readiness, or merge evidence.
 - Treat wrapper memory/context summaries as advisory local context, not proof of opaque Hermes memory reads or changes.
 Preserve workflow intent and stop conditions; verify before claiming completion.
-Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only; OMH's record terms (surface, lane, wrapper, handoff, evidence boundary, not_observed) stay in records and tool calls, never in the sentence the user reads unless they ask about one; and when a real unresolved user decision or a useful briefing discussion remains, offer one specific, content-linked question. Completed work needs no question; omit unrelated non-action footers and generic offers to continue.
+Reply in the user's own words and the host's own voice: its SOUL.md persona owns reply language, tone, speech level, and sentence endings, progress updates included (where it sets no language, use the one the user wrote in), and OMH shapes structure and content only. When the requested output is delivered, put any open points inside the result and end with no question or offer; only when the person asked to choose or decide and that choice is still theirs, end with one specific question about it, not a list, a generic offer, or a footer; the shared rail's Reply Language And Host Voice and Turn Ending sections hold the full rule.
 
 Use Hermes-native subagent/delegation features when available: native subagents -> Hermes delegation when available, otherwise sequential lanes.
 

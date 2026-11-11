@@ -63,7 +63,7 @@ MacBook 설정에서 아래 스킬 66개를 **모두 설치**한다. 표의 구�
 | 핵심 | `shadcn` | shadcn/ui 컴포넌트 추가·검색·구성·스타일 | `~/.agents/skills/shadcn/SKILL.md` | Agent-setup `shared/skills/core/shadcn` 복사 ([shadcn-ui/ui](https://github.com/shadcn-ui/ui) 공식 스킬 원본) |
 | 핵심 | `shadcn-lint` | @shadcn/lint 설치·등록·규칙 안내 | `~/.agents/skills/shadcn-lint/SKILL.md` | Agent-setup `shared/skills/core/shadcn-lint` 복사 ([shadcn-ui/lint](https://github.com/shadcn-ui/lint) SETUP.md 기반) |
 | 핵심 | `logo-design` | 로고·브랜드 마크 브리프·컨셉·SVG 제작·16px 시험·전달 파일 | `~/.agents/skills/logo-design/SKILL.md` | Agent-setup `shared/skills/core/logo-design` 복사 ([kaankiziltug/logo-design-skill](https://github.com/kaankiziltug/logo-design-skill) @ 0ecf52e, 상표 로고 SVG 묶음 제외) |
-| 핵심 | Hermes 작업 교훈 22개·OMH 153개 | 운영 진단·인프라 설계·미디어·검증 교훈과 OMH 계획·검토·운영 워크플로 | `~/.agents/skills/<이름>/SKILL.md` | Agent-setup `shared/skills/core`·`shared/skills/omh`(OMH 최신 정식판 사본, 버전은 `SOURCE.json`) 복사; 목록은 [스킬 표](../docs/skills.md) |
+| 핵심 | Hermes 작업 교훈 22개·OMH 155개 | 운영 진단·인프라 설계·미디어·검증 교훈과 OMH 계획·검토·운영 워크플로 | `~/.agents/skills/<이름>/SKILL.md` | Agent-setup `shared/skills/core`·`shared/skills/omh`(OMH 최신 정식판 사본, 버전은 `SOURCE.json`) 복사; 목록은 [스킬 표](../docs/skills.md) |
 | 업무 | `iterative-retrieval` | 이미 배정한 하위 작업의 부족한 맥락 보완 | `~/.agents/skills/iterative-retrieval/SKILL.md` | [ECC](https://github.com/affaan-m/ECC) 원본 복사 |
 | 업무 | `cost-analysis` | 실제 Azure 비용·청구 변화 분석 | `~/.agents/skills/cost-analysis/SKILL.md` | Microsoft 원본 복사 |
 | 업무 | `cost-estimation` | 계획 중인 Azure 사용료 추정 | `~/.agents/skills/cost-estimation/SKILL.md` | Microsoft 원본 복사 |
