@@ -8,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 # writing matches in both presets since 2026-11-12 (Sol -> Opus).
 CHANGED = {'ultrabrain', 'deep', 'architect', 'unspecified-high', 'unspecified-low', 'quick',
-           'visual-engineering', 'artistry', 'capable', 'simple-work'}
+           'visual-engineering', 'artistry', 'capable', 'simple-work', 'deep-work'}
 OMH_ONLY = {'google-search', 'x-search', 'review', 'swarm', 'forensics', 'synthesize'}
 
 
@@ -31,9 +31,12 @@ class RoutingPresetTests(unittest.TestCase):
         for key in ['visual-engineering', 'artistry', 'capable']:
             self.assertEqual([x['model'] for x in chains[key]][:2],
                              ['gpt-6-astra', 'claude-opus-5-5'])
+        # Claude-generous lowered deep-work from max to high (decision 2026-11-12).
+        efforts = {'claude-generous': 'high', 'gpt-generous': 'max'}
         for name in self.chains:
+            effort = efforts[name]
             self.assertEqual([(x['model'], x['reasoning_effort']) for x in self.chains[name]['deep-work']],
-                             [('claude-opus-5-5', 'max'), ('gpt-6.1-sol', 'max')])
+                             [('claude-opus-5-5', effort), ('gpt-6.1-sol', effort)])
 
     def test_fable_only_in_claude_preset_and_chain_text_matches(self):
         self.assertNotIn('claude-fable-5-1', json.dumps(self.presets['gpt-generous']))

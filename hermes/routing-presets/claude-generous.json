@@ -214,16 +214,16 @@
       "chain": [
         {
           "model": "claude-opus-5-5",
-          "reasoning_effort": "max",
+          "reasoning_effort": "high",
           "served": true
         },
         {
           "model": "gpt-6.1-sol",
-          "reasoning_effort": "max",
+          "reasoning_effort": "high",
           "served": true
         }
       ],
-      "chain_text": "claude-opus-5-5:max, gpt-6.1-sol:max",
+      "chain_text": "claude-opus-5-5:high, gpt-6.1-sol:high",
       "entitlement_shaped": false,
       "origin": "override"
     },

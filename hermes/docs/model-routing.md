@@ -13,7 +13,7 @@ Hermes 내부 위임에 적용하는 사용자 지정 정책이다. 외부 Claud
 |---|---|---|---|---|---|---|---|
 | ultrabrain | 최고난도 추론 | 추론 | Astra | Astra | xhigh | Astra → Opus | xhigh |
 | deep | 깊은 작업 | 코딩 | Opus → Sol → Kimi | Opus → Sol | high | Sol → Opus | high |
-| deep-work | 아주 긴 작업 | 코딩 | Opus → Sol | Opus → Sol | max | Opus → Sol | max |
+| deep-work | 아주 긴 작업 | 코딩 | Opus → Sol (max) | Opus → Sol | **high** | Opus → Sol | max |
 | architect | 설계 | 코딩 | Opus → Astra → Fable → Kimi | Opus → Astra → Fable | xhigh | Astra → Opus | xhigh |
 | visual-engineering | 화면 개발 | 코딩 | Opus → Fable → Gemini → Kimi | Opus → Fable | high | Astra → Opus | high |
 | capable | 일반 실무 | 코딩 | Opus → Sol → Fable → Kimi | Opus → Sol → Fable | medium | Astra → Opus → Sonnet | medium |
@@ -32,7 +32,7 @@ Hermes 내부 위임에 적용하는 사용자 지정 정책이다. 외부 Claud
 | (분류 없음) 하위 에이전트 | `delegation.model` 기본값 | - | 메인 대화 모델을 따름 | **Sol** → Opus | medium | - | - |
 | 메인 대화·Discord·cron | `model.default` | - | - | Opus → Sol | medium | - | - |
 
-추론 강도는 18개 분류 모두 OMH 4.0.7 추천과 같다. 굵게 표시한 칸이 OMH 추천 1순위와 다르게 둔 곳이다.
+추론 강도는 deep-work만 OMH 4.0.7 추천(max)보다 낮춘 high이고 나머지 17개 분류는 추천과 같다(사용자 결정 2026-11-12: deep-work 사용이 많아 Claude 주간 한도가 빨리 소진됨). 굵게 표시한 칸이 OMH 추천 1순위와 다르게 둔 곳이다.
 
 Claude 넉넉형은 OMH 4.0.7 추천 순서와 추론을 따르고, GPT·Claude가 아닌 후보(Gemini·Grok·Kimi·GLM·DeepSeek)만 뺀다(사용자 결정 2026-11-10). OMH 추천에서 후보가 모두 빠지는 x-search는 Sol(`high`)로 둔다. Opus를 코딩에 남기려고 코딩 외 분류인 writing·artistry·synthesize는 Sol을 1순위로 두고, 분류 없이 띄우는 하위 에이전트 기본값(`delegation.model`)도 Sol(`openai-codex`, medium)로 둔다. 메인 대화는 Opus를 유지한다(사용자 결정 2026-11-12). 18개 분류를 모두 덮어써서 OMH 기본값의 비GPT·비Claude 후보가 남지 않게 한다. Fable은 Claude 계열이라 OMH 순서대로 남고, 같은 Anthropic 주간 한도에서 차감된다. Sol은 GPT-6.1 Sol, Luna·Astra는 GPT-6, Opus·Sonnet·Haiku 5.5는 Claude 5.5, Fable은 Claude Fable 5.1이다. GPT 넉넉형은 12개 분류만 지정하며 이전 정책을 유지한다. 각 실행기의 정책은 해당 폴더에서 독립적으로 관리한다.
 
@@ -112,7 +112,7 @@ omh model-chains set visual-engineering 'claude-opus-5-5:high, claude-fable-5-1:
 omh model-chains set artistry 'gpt-6.1-sol:high, claude-opus-5-5:high, claude-fable-5-1:high'
 omh model-chains set capable 'claude-opus-5-5:medium, gpt-6.1-sol:medium, claude-fable-5-1:medium'
 omh model-chains set simple-work 'gpt-6-luna:low, claude-haiku-5-5:low'
-omh model-chains set deep-work 'claude-opus-5-5:max, gpt-6.1-sol:max'
+omh model-chains set deep-work 'claude-opus-5-5:high, gpt-6.1-sol:high'
 omh model-chains set google-search 'gpt-6.1-sol:medium, claude-opus-5-5:medium'
 omh model-chains set x-search 'gpt-6.1-sol:high'
 omh model-chains set review 'gpt-6.1-sol:xhigh, claude-opus-5-5:xhigh'

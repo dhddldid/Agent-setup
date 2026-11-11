@@ -18,7 +18,7 @@ EXPECTED = {
     'artistry': ('gpt-6.1-sol claude-opus-5-5 claude-fable-5-1', 'high'),
     'capable': ('claude-opus-5-5 gpt-6.1-sol claude-fable-5-1', 'medium'),
     'simple-work': ('gpt-6-luna claude-haiku-5-5', 'low'),
-    'deep-work': ('claude-opus-5-5 gpt-6.1-sol', 'max'),
+    'deep-work': ('claude-opus-5-5 gpt-6.1-sol', 'high'),  # lowered from max (decision 2026-11-12)
     'google-search': ('gpt-6.1-sol claude-opus-5-5', 'medium'),
     'x-search': ('gpt-6.1-sol', 'high'),
     'review': ('gpt-6.1-sol claude-opus-5-5', 'xhigh'),
