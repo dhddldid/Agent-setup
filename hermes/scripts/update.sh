@@ -249,6 +249,18 @@ act "$PY" "$AGENT_SETUP/scripts/check_parallel_gaps.py" routing \
 act "$PY" "$AGENT_SETUP/hermes/scripts/configure_provider_usage.py" --home "$HERMES_HOME" --apply \
   || die 'provider-usage 표시 수정을 적용하지 못했습니다. 플러그인 파일 변경 여부를 확인하세요.'
 
+# OMH 4.0.7+ defaults bare `omh` to a TUI runtime of its own, which omh doctor blocks when the
+# root config connects a messaging platform (Discord here). Keep the earlier shared-gateway TUI
+# unless the user saved a choice.
+if [[ $MODE == run ]]; then
+  if "$OMH_BIN" theme runtime --json 2>/dev/null | "$PY" -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("source")!="saved" else 1)' \
+    && "$OMH_BIN" doctor --json 2>/dev/null | "$PY" -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if any(c.get("name")=="omh_tui_runtime" and not c.get("ok",True) and (c.get("detail") or {}).get("config_platform_credentials") for c in d.get("checks",[])) else 1)'; then
+    act "$OMH_BIN" theme runtime shared --language ko
+  fi
+else
+  show_cmd "$OMH_BIN" theme runtime shared '(기본 config에 메신저가 연결돼 있고 저장된 선택이 없을 때만)'
+fi
+
 act mkdir -p "$HERMES_HOME/desktop-plugins/provider-usage"
 act cp "$PROVIDER_CHECKOUT/desktop/plugin.js" "$HERMES_HOME/desktop-plugins/provider-usage/plugin.js"
 
