@@ -22,12 +22,12 @@ Hermes에서 가져온 두 프리셋을 `routes/claude-code.json`에서 Claude C
 | `unspecified-high` | 분류 밖의 복합 작업 | gpt-6.1-sol → claude-opus-5-5 | claude-opus-5-5 | medium |
 | `unspecified-low` | 분류 밖의 단순 작업 | gpt-6.1-sol → claude-sonnet-5-5 | claude-opus-5-5 | low |
 | `quick` | 좁은 탐색·빠른 확인 | gpt-6-luna → claude-haiku-5-5 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → gpt-6-astra | low |
-| `writing` | 문서 작성·편집 | claude-opus-5-5 → claude-sonnet-5-5 | gpt-6.1-sol → claude-opus-5-5 | medium |
+| `writing` | 문서 작성·편집 | gpt-6.1-sol → claude-opus-5-5 | gpt-6.1-sol → claude-opus-5-5 | medium |
 | `visual-engineering` | 화면·프론트엔드 구현 | claude-opus-5-5 → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
-| `artistry` | 창의적 설계·시각 방향 | claude-opus-5-5 → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
+| `artistry` | 창의적 설계·시각 방향 | gpt-6.1-sol → claude-opus-5-5 → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 | high |
 | `capable` | 일반 실행 | claude-opus-5-5 → gpt-6.1-sol → claude-fable-5-1 | claude-fable-5-1 → gpt-6-astra → claude-opus-5-5 → claude-sonnet-5-5 | medium |
 | `simple-work` | 단순 실행 | gpt-6-luna → claude-haiku-5-5 | gpt-6-luna → claude-fable-5-1 → claude-opus-5-5 → claude-haiku-5-5 | low |
-| `deep-work` | 길고 까다로운 복합 실행 | claude-opus-5-5 → gpt-6.1-sol | 같음 | max |
+| `deep-work` | 길고 까다로운 복합 실행 | claude-opus-5-5 → gpt-6.1-sol | 같음 | high |
 
 Claude Code에는 하위 에이전트 단위 모델 자동 대체가 없다. 전역 규칙에 따라 주 에이전트가 항목 실패(모델 사용 불가·한도·인증 오류, 빈 Codex 결과)를 보고 같은 작업을 다음 항목에 넘긴다. Fable은 요금제에 따라 별도 사용 크레딧을 쓴다.
 

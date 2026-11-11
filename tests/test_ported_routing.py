@@ -10,11 +10,13 @@ HERMES_ONLY_SKILLS = {
 
 
 CLAUDE_COMMON = {
-    # OMH v4.0.0 deep-work head (Opus 5.5 -> GPT-6.1 Sol, max), applied 2026-10-20.
-    "deep-work": ("claude-opus-5-5 gpt-6.1-sol", "max"),
+    # OMH v4.0.0 deep-work head (Opus 5.5 -> GPT-6.1 Sol), applied 2026-10-20; effort lowered max -> high
+    # to slow the Claude weekly limit (decision 2026-11-12).
+    "deep-work": ("claude-opus-5-5 gpt-6.1-sol", "high"),
 }
 CLAUDE_PRESETS = {
-    # OMH 4.0.7 recommended order limited to GPT and Claude models (decision 2026-11-10).
+    # OMH 4.0.7 recommended order limited to GPT and Claude models (decision 2026-11-10);
+    # writing/artistry put Sol first so Opus stays on coding (decision 2026-11-12).
     "claude-generous": {
         "ultrabrain": ("gpt-6-astra", "xhigh"),
         "deep": ("claude-opus-5-5 gpt-6.1-sol", "high"),
@@ -22,9 +24,9 @@ CLAUDE_PRESETS = {
         "unspecified-high": ("gpt-6.1-sol claude-opus-5-5", "medium"),
         "unspecified-low": ("gpt-6.1-sol claude-sonnet-5-5", "low"),
         "quick": ("gpt-6-luna claude-haiku-5-5", "low"),
-        "writing": ("claude-opus-5-5 claude-sonnet-5-5", "medium"),
+        "writing": ("gpt-6.1-sol claude-opus-5-5", "medium"),
         "visual-engineering": ("claude-opus-5-5 claude-fable-5-1", "high"),
-        "artistry": ("claude-opus-5-5 claude-fable-5-1", "high"),
+        "artistry": ("gpt-6.1-sol claude-opus-5-5 claude-fable-5-1", "high"),
         "capable": ("claude-opus-5-5 gpt-6.1-sol claude-fable-5-1", "medium"),
         "simple-work": ("gpt-6-luna claude-haiku-5-5", "low"),
     },
